@@ -1,0 +1,84 @@
+extends ../layout
+
+block content
+  .container.my-4
+    // Breadcrumb
+    nav(aria-label="breadcrumb")
+      ol.breadcrumb
+        li.breadcrumb-item
+          a(href="/") Inicio
+        li.breadcrumb-item.active(aria-current="page") Mis Favoritos
+
+    // Page Header
+    .row.mb-4
+      .col-md-8
+        .d-flex.align-items-center
+          .bg-danger.rounded-circle.d-flex.align-items-center.justify-content-center.me-3(style="width: 60px; height: 60px;")
+            i.bi.bi-heart-fill.text-white.fs-3
+          div
+            h2.fw-bold.mb-1 Mis Favoritos
+            p.text-muted.mb-0 Items que te interesan
+      .col-md-4.text-md-end
+        a.btn.btn-outline-primary(href="/me/items")
+          i.bi.bi-collection.me-2
+          | Ver Mis Items
+
+    // Favorites Grid
+    if favorites.length > 0
+      .row
+        each item in favorites
+          .col-md-6.col-lg-4.mb-4
+            .card.h-100.border-0.shadow-sm
+              .position-relative
+                img.card-img-top(src=item.image, alt=item.title, style="height: 200px; object-fit: cover;")
+                .position-absolute.top-0.end-0.m-2
+                  button.btn.btn-light.btn-sm.rounded-circle(onclick=`removeFavorite(${item.id})`)
+                    i.bi.bi-heart-fill.text-danger
+
+              .card-body.d-flex.flex-column
+                h6.card-title.fw-bold= item.title
+                p.card-text.text-muted.small.flex-grow-1= item.description
+                
+                .d-flex.justify-content-between.align-items-center.mb-2
+                  span.h5.text-primary.mb-0 $#{item.price}
+                  span.badge.bg-light.text-dark= item.condition
+                
+                .mb-3
+                  small.text-muted
+                    i.bi.bi-person.me-1
+                    | #{item.seller}
+                  br
+                  small.text-muted
+                    i.bi.bi-calendar.me-1
+                    | #{new Date(item.createdAt).toLocaleDateString('es-EC')}
+
+                // Action Buttons
+                .d-grid.gap-2.mt-auto
+                  a.btn.btn-primary.btn-sm(href=`/items/${item.id}`) Ver Detalles
+                  a.btn.btn-outline-success.btn-sm(
+                    href=`https://wa.me/593999999999?text=Hola! Vi tu publicación en CampusSwap: ${item.title}. ¿Está disponible?`,
+                    target="_blank"
+                  )
+                    i.bi.bi-whatsapp.me-1
+                    | Contactar
+    else
+      .row
+        .col-12.text-center.py-5
+          .bg-light.rounded.p-5
+            i.bi.bi-heart.fs-1.text-muted.mb-3
+            h4.text-muted No tienes favoritos guardados
+            p.text-muted.mb-4 Explora items y guarda los que te interesen
+            a.btn.btn-primary.btn-lg(href="/")
+              i.bi.bi-search.me-2
+              | Explorar Items
+
+  // JavaScript for favorites functionality
+  script.
+    function removeFavorite(itemId) {
+      if (confirm('¿Quitar este item de tus favoritos?')) {
+        // In real app, make API call to remove favorite
+        console.log(`Remove favorite: ${itemId}`);
+        // For demo, just reload page
+        location.reload();
+      }
+    }

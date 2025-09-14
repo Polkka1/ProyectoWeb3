@@ -1,0 +1,163 @@
+extends ../layout
+
+block content
+  .container.my-5
+    .row.justify-content-center
+      .col-md-6.col-lg-5
+        // Logo/Brand Section
+        .text-center.mb-4
+          .bg-primary.rounded-circle.d-inline-flex.align-items-center.justify-content-center.mb-3(style="width: 80px; height: 80px;")
+            i.bi.bi-arrow-repeat.text-white.fs-1
+          h2.fw-bold CampuSwap
+          p.text-muted Únete al mercado estudiantil USFQ
+
+        // Register Card
+        .card.border-0.shadow
+          .card-body.p-4
+            h3.text-center.mb-4 Crear Cuenta
+
+            // Error Alert
+            if error
+              .alert.alert-danger.d-flex.align-items-center(role="alert")
+                i.bi.bi-exclamation-triangle-fill.me-2
+                div= error
+
+            // Success Alert
+            if success
+              .alert.alert-success.d-flex.align-items-center(role="alert")
+                i.bi.bi-check-circle-fill.me-2
+                div= success
+
+            // Register Form
+            form(method="POST", action="/auth/register", novalidate)
+              .mb-3
+                label.form-label(for="name") Nombre Completo
+                .input-group
+                  span.input-group-text
+                    i.bi.bi-person
+                  input.form-control(
+                    type="text", 
+                    id="name", 
+                    name="name", 
+                    placeholder="Tu nombre completo",
+                    value=formData.name || '',
+                    required
+                  )
+
+              .mb-3
+                label.form-label(for="email") Email Institucional USFQ
+                .input-group
+                  span.input-group-text
+                    i.bi.bi-envelope
+                  input.form-control(
+                    type="email", 
+                    id="email", 
+                    name="email", 
+                    placeholder="tu.nombre@student.usfq.edu.ec",
+                    value=formData.email || '',
+                    pattern=".*@.*usfq.edu.ec$",
+                    required
+                  )
+                .form-text Solo emails institucionales de USFQ (@student.usfq.edu.ec o @usfq.edu.ec)
+
+              .mb-3
+                label.form-label(for="password") Contraseña
+                .input-group
+                  span.input-group-text
+                    i.bi.bi-lock
+                  input.form-control(
+                    type="password", 
+                    id="password", 
+                    name="password", 
+                    placeholder="Mínimo 8 caracteres",
+                    minlength="8",
+                    required
+                  )
+
+              .mb-3
+                label.form-label(for="confirmPassword") Confirmar Contraseña
+                .input-group
+                  span.input-group-text
+                    i.bi.bi-lock-fill
+                  input.form-control(
+                    type="password", 
+                    id="confirmPassword", 
+                    name="confirmPassword", 
+                    placeholder="Repite tu contraseña",
+                    required
+                  )
+
+              .mb-3.form-check
+                input.form-check-input(type="checkbox", id="terms", required)
+                label.form-check-label(for="terms") 
+                  | Acepto los 
+                  a(href="#", data-bs-toggle="modal", data-bs-target="#termsModal") términos y condiciones
+
+              .d-grid.mb-3
+                button.btn.btn-primary.btn-lg(type="submit") Crear Cuenta
+
+              .text-center
+                p.mb-0
+                  | ¿Ya tienes cuenta? 
+                  a.text-decoration-none(href="/auth/login") Inicia sesión
+
+        // Additional Info
+        .text-center.mt-4
+          small.text-muted
+            i.bi.bi-shield-check.me-1
+            | Tu información está protegida
+            br
+            | Solo miembros verificados de USFQ
+
+  // Terms Modal
+  #termsModal.modal.fade(tabindex="-1")
+    .modal-dialog.modal-lg
+      .modal-content
+        .modal-header
+          h5.modal-title Términos y Condiciones
+          button.btn-close(type="button", data-bs-dismiss="modal")
+        .modal-body
+          h6 1. Uso de la plataforma
+          p CampuSwap es exclusivo para estudiantes y personal de la Universidad San Francisco de Quito (USFQ).
+          
+          h6 2. Responsabilidad
+          p Los usuarios son responsables de la veracidad de la información de sus productos y de las transacciones realizadas.
+          
+          h6 3. Productos permitidos
+          p Solo se permiten artículos académicos, tecnológicos y de uso estudiantil. Está prohibida la venta de productos ilegales.
+          
+          h6 4. Contacto y transacciones
+          p Las transacciones se realizan directamente entre usuarios. CampuSwap no se hace responsable por disputas.
+          
+          h6 5. Privacidad
+          p Respetamos tu privacidad y protegemos tus datos personales según nuestras políticas.
+        .modal-footer
+          button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cerrar
+          button.btn.btn-primary(type="button", data-bs-dismiss="modal") Acepto
+
+  // Form Validation Script
+  script.
+    // Password confirmation validation
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    
+    function validatePassword() {
+      if (password.value !== confirmPassword.value) {
+        confirmPassword.setCustomValidity('Las contraseñas no coinciden');
+      } else {
+        confirmPassword.setCustomValidity('');
+      }
+    }
+    
+    password.addEventListener('input', validatePassword);
+    confirmPassword.addEventListener('input', validatePassword);
+    
+    // Email validation for USFQ domain
+    const email = document.getElementById('email');
+    email.addEventListener('input', function() {
+      if (!email.value.includes('@usfq.edu.ec')) {
+        email.setCustomValidity('Debes usar tu email institucional de USFQ');
+      } else {
+        email.setCustomValidity('');
+      }
+    });

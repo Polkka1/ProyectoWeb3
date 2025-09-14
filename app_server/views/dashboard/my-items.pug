@@ -1,0 +1,209 @@
+extends ../layout
+
+block content
+  .container.my-4
+    // Breadcrumb
+    nav(aria-label="breadcrumb")
+      ol.breadcrumb
+        li.breadcrumb-item
+          a(href="/") Inicio
+        li.breadcrumb-item.active(aria-current="page") Mis Items
+
+    // Page Header
+    .row.mb-4
+      .col-md-8
+        .d-flex.align-items-center
+          .bg-primary.rounded-circle.d-flex.align-items-center.justify-content-center.me-3(style="width: 60px; height: 60px;")
+            i.bi.bi-person-circle.text-white.fs-3
+          div
+            h2.fw-bold.mb-1 Hola, #{userName}
+            p.text-muted.mb-0 Administra tus publicaciones
+      .col-md-4.text-md-end
+        a.btn.btn-primary(href="/items/new")
+          i.bi.bi-plus-circle.me-2
+          | Publicar Nuevo Item
+
+    // Stats Cards
+    .row.mb-4
+      .col-md-3.col-sm-6.mb-3
+        .card.border-0.bg-primary.text-white
+          .card-body.text-center
+            i.bi.bi-collection.fs-1.mb-2
+            h4.fw-bold= stats.total
+            p.mb-0 Items Totales
+      .col-md-3.col-sm-6.mb-3
+        .card.border-0.bg-success.text-white
+          .card-body.text-center
+            i.bi.bi-check-circle.fs-1.mb-2
+            h4.fw-bold= stats.active
+            p.mb-0 Activos
+      .col-md-3.col-sm-6.mb-3
+        .card.border-0.bg-secondary.text-white
+          .card-body.text-center
+            i.bi.bi-archive.fs-1.mb-2
+            h4.fw-bold= stats.sold
+            p.mb-0 Vendidos
+      .col-md-3.col-sm-6.mb-3
+        .card.border-0.bg-info.text-white
+          .card-body.text-center
+            i.bi.bi-eye.fs-1.mb-2
+            h4.fw-bold= stats.totalViews
+            p.mb-0 Contactos Total
+
+    // Filter Tabs
+    .row.mb-3
+      .col-12
+        ul.nav.nav-pills
+          li.nav-item
+            a.nav-link.active#all-tab(href="#", onclick="filterItems('all')") Todos (#{stats.total})
+          li.nav-item
+            a.nav-link#active-tab(href="#", onclick="filterItems('active')") Activos (#{stats.active})
+          li.nav-item
+            a.nav-link#sold-tab(href="#", onclick="filterItems('sold')") Vendidos (#{stats.sold})
+
+    // Items Grid
+    if items.length > 0
+      .row#items-container
+        each item in items
+          .col-md-6.col-lg-4.mb-4.item-card(data-status=item.status)
+            .card.h-100.border-0.shadow-sm
+              .position-relative
+                img.card-img-top(src=item.image, alt=item.title, style="height: 200px; object-fit: cover;")
+                .position-absolute.top-0.end-0.m-2
+                  if item.status === 'active'
+                    span.badge.bg-success Activo
+                  else if item.status === 'sold'
+                    span.badge.bg-secondary Vendido
+
+              .card-body.d-flex.flex-column
+                h6.card-title.fw-bold= item.title
+                p.card-text.text-muted.small.flex-grow-1= item.description.substring(0, 100) + '...'
+                
+                .d-flex.justify-content-between.align-items-center.mb-3
+                  span.h5.text-primary.mb-0 $#{item.price}
+                  small.text-muted= item.category
+                
+                .mb-2
+                  small.text-muted
+                    i.bi.bi-calendar.me-1
+                    | #{new Date(item.createdAt).toLocaleDateString('es-EC')}
+                  br
+                  small.text-muted
+                    i.bi.bi-eye.me-1
+                    | #{item.contactClicks} contactos
+
+                // Action Buttons
+                .d-grid.gap-2.mt-auto
+                  .btn-group
+                    a.btn.btn-outline-primary.btn-sm(href=`/items/${item.id}`) Ver
+                    button.btn.btn-outline-secondary.btn-sm(onclick=`editItem(${item.id})`) Editar
+                  
+                  if item.status === 'active'
+                    .btn-group
+                      button.btn.btn-warning.btn-sm(onclick=`markAsSold(${item.id})`) Marcar Vendido
+                      button.btn.btn-outline-danger.btn-sm(onclick=`confirmDelete(${item.id}, '${item.title}')`) Eliminar
+                  else
+                    .btn-group
+                      button.btn.btn-success.btn-sm(onclick=`markAsActive(${item.id})`) Reactivar
+                      button.btn.btn-outline-danger.btn-sm(onclick=`confirmDelete(${item.id}, '${item.title}')`) Eliminar
+    else
+      .row
+        .col-12.text-center.py-5
+          .bg-light.rounded.p-5
+            i.bi.bi-inbox.fs-1.text-muted.mb-3
+            h4.text-muted No tienes items publicados
+            p.text-muted.mb-4 ¡Publica tu primer item y comienza a vender!
+            a.btn.btn-primary.btn-lg(href="/items/new")
+              i.bi.bi-plus-circle.me-2
+              | Publicar Primer Item
+
+  // Delete Confirmation Modal
+  #deleteModal.modal.fade(tabindex="-1")
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title Confirmar Eliminación
+          button.btn-close(type="button", data-bs-dismiss="modal")
+        .modal-body
+          p ¿Estás seguro que deseas eliminar este item?
+          p.fw-bold#itemToDelete
+          p.text-muted Esta acción no se puede deshacer.
+        .modal-footer
+          button.btn.btn-secondary(type="button", data-bs-dismiss="modal") Cancelar
+          button.btn.btn-danger#confirmDeleteBtn Eliminar Item
+
+  // JavaScript for dashboard functionality
+  script.
+    let itemToDeleteId = null;
+
+    function filterItems(status) {
+      // Update active tab
+      document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+      document.getElementById(status + '-tab').classList.add('active');
+
+      // Show/hide items
+      const items = document.querySelectorAll('.item-card');
+      items.forEach(item => {
+        if (status === 'all' || item.dataset.status === status) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function confirmDelete(itemId, itemTitle) {
+      itemToDeleteId = itemId;
+      document.getElementById('itemToDelete').textContent = itemTitle;
+      new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+
+    function markAsSold(itemId) {
+      // Create form and submit
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/me/items/${itemId}/status`;
+      
+      const statusInput = document.createElement('input');
+      statusInput.type = 'hidden';
+      statusInput.name = 'status';
+      statusInput.value = 'sold';
+      
+      form.appendChild(statusInput);
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function markAsActive(itemId) {
+      // Create form and submit
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/me/items/${itemId}/status`;
+      
+      const statusInput = document.createElement('input');
+      statusInput.type = 'hidden';
+      statusInput.name = 'status';
+      statusInput.value = 'active';
+      
+      form.appendChild(statusInput);
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function editItem(itemId) {
+      // In real app, redirect to edit page
+      alert(`Función de editar será implementada para item ${itemId}`);
+    }
+
+    // Confirm delete button handler
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+      if (itemToDeleteId) {
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/me/items/${itemToDeleteId}/delete`;
+        
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });

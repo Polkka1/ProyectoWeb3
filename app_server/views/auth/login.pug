@@ -1,0 +1,84 @@
+extends ../layout
+
+block content
+  .container.my-5
+    .row.justify-content-center
+      .col-md-6.col-lg-5
+        // Logo/Brand Section
+        .text-center.mb-4
+          .bg-primary.rounded-circle.d-inline-flex.align-items-center.justify-content-center.mb-3(style="width: 80px; height: 80px;")
+            i.bi.bi-arrow-repeat.text-white.fs-1
+          h2.fw-bold CampuSwap
+          p.text-muted Mercado estudiantil USFQ
+
+        // Login Card
+        .card.border-0.shadow
+          .card-body.p-4
+            h3.text-center.mb-4 Iniciar Sesión
+
+            // Error Alert
+            if error
+              .alert.alert-danger.d-flex.align-items-center(role="alert")
+                i.bi.bi-exclamation-triangle-fill.me-2
+                div= error
+
+            // Login Form
+            form(method="POST", action="/auth/login")
+              .mb-3
+                label.form-label(for="email") Email Institucional
+                .input-group
+                  span.input-group-text
+                    i.bi.bi-envelope
+                  input.form-control(
+                    type="email", 
+                    id="email", 
+                    name="email", 
+                    placeholder="tu.nombre@student.usfq.edu.ec",
+                    value=formData.email || '',
+                    required
+                  )
+
+              .mb-3
+                label.form-label(for="password") Contraseña
+                .input-group
+                  span.input-group-text
+                    i.bi.bi-lock
+                  input.form-control(
+                    type="password", 
+                    id="password", 
+                    name="password", 
+                    placeholder="Ingresa tu contraseña",
+                    required
+                  )
+
+              .mb-3.form-check
+                input.form-check-input(type="checkbox", id="remember")
+                label.form-check-label(for="remember") Recordarme
+
+              .d-grid.mb-3
+                button.btn.btn-primary.btn-lg(type="submit") Iniciar Sesión
+
+              .text-center
+                p.mb-2
+                  a.text-decoration-none(href="#") ¿Olvidaste tu contraseña?
+                p.mb-0
+                  | ¿No tienes cuenta? 
+                  a.text-decoration-none(href="/auth/register") Regístrate aquí
+
+        // Demo Credentials Info
+        .card.border-warning.mt-4
+          .card-body.text-center.bg-light
+            .small
+              strong Demo de prueba:
+              br
+              | Email: demo@usfq.edu.ec
+              br
+              | Contraseña: 12345678
+
+        // Additional Info
+        .text-center.mt-4
+          small.text-muted
+            i.bi.bi-shield-check.me-1
+            | Solo estudiantes y personal de USFQ
+            br
+            | Tus datos están seguros con nosotros

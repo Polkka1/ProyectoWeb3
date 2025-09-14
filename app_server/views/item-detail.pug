@@ -1,0 +1,156 @@
+extends layout
+
+block content
+  .container.my-4
+    // Breadcrumb
+    nav(aria-label="breadcrumb")
+      ol.breadcrumb
+        li.breadcrumb-item
+          a(href="/") Inicio
+        li.breadcrumb-item.active(aria-current="page")= item.title
+
+    .row
+      // Image Gallery Column
+      .col-md-6.mb-4
+        .card.border-0.shadow-sm
+          .card-body.p-0
+            // Main Image Carousel
+            #productCarousel.carousel.slide(data-bs-ride="carousel")
+              .carousel-inner
+                each image, index in item.images
+                  .carousel-item(class=index === 0 ? 'active' : '')
+                    img.d-block.w-100(src=image, alt=`${item.title} imagen ${index + 1}`, style="height: 400px; object-fit: cover;")
+              
+              if item.images.length > 1
+                button.carousel-control-prev(type="button", data-bs-target="#productCarousel", data-bs-slide="prev")
+                  span.carousel-control-prev-icon(aria-hidden="true")
+                  span.visually-hidden Anterior
+                button.carousel-control-next(type="button", data-bs-target="#productCarousel", data-bs-slide="next")
+                  span.carousel-control-next-icon(aria-hidden="true")
+                  span.visually-hidden Siguiente
+
+            // Image Thumbnails
+            if item.images.length > 1
+              .d-flex.justify-content-center.p-3.bg-light
+                each image, index in item.images
+                  button.btn.btn-outline-secondary.btn-sm.me-2(
+                    type="button", 
+                    data-bs-target="#productCarousel", 
+                    data-bs-slide-to=index,
+                    class=index === 0 ? 'active' : ''
+                  )
+                    img(src=image, alt=`Thumbnail ${index + 1}`, style="width: 40px; height: 30px; object-fit: cover;")
+
+      // Product Information Column  
+      .col-md-6
+        .card.border-0.shadow-sm.h-100
+          .card-body
+            // Product Header
+            .d-flex.justify-content-between.align-items-start.mb-3
+              div
+                h1.h3.fw-bold= item.title
+                .d-flex.gap-2.mb-2
+                  span.badge.bg-primary= item.category
+                  span.badge.bg-success= item.condition
+              button.btn.btn-outline-danger.btn-sm
+                i.bi.bi-heart
+                | Guardar
+
+            // Price
+            .mb-4
+              .h2.text-primary.fw-bold $#{item.price}
+              small.text-muted Precio negociable
+
+            // Description
+            .mb-4
+              h5 Descripción
+              p.text-muted= item.description
+
+            // Seller Information
+            .mb-4
+              h5 Vendedor
+              .d-flex.align-items-center
+                .bg-primary.rounded-circle.d-flex.align-items-center.justify-content-center.me-3(style="width: 50px; height: 50px;")
+                  i.bi.bi-person.text-white.fs-4
+                div
+                  .fw-bold= item.seller.name
+                  small.text-muted Estudiante USFQ
+                  br
+                  small.text-muted Publicado el #{new Date(item.createdAt).toLocaleDateString('es-EC')}
+
+            // Contact Actions
+            .mb-4
+              h5.mb-3 Contactar al vendedor
+              .d-grid.gap-2
+                a.btn.btn-success.btn-lg(
+                  href=`https://wa.me/${item.seller.whatsapp}?text=Hola! Vi tu publicación en CampusSwap: ${item.title}. ¿Está disponible?`,
+                  target="_blank",
+                  onclick="trackContact('whatsapp')"
+                )
+                  i.bi.bi-whatsapp.me-2
+                  | Contactar por WhatsApp
+                
+                a.btn.btn-outline-primary.btn-lg(
+                  href=`mailto:${item.seller.email}?subject=Consulta sobre: ${item.title}&body=Hola ${item.seller.name},%0A%0AVi tu publicación en CampusSwap sobre "${item.title}" y me interesa conocer más detalles.%0A%0AGracias!`,
+                  onclick="trackContact('email')"
+                )
+                  i.bi.bi-envelope.me-2
+                  | Enviar Email
+
+            // Stats
+            .border-top.pt-3
+              small.text-muted
+                i.bi.bi-eye.me-1
+                | #{item.contactClicks} personas han contactado al vendedor
+
+    // Related Items Section
+    .row.mt-5
+      .col-12
+        h3.mb-4 Productos similares
+        .row
+          // Placeholder for related items - you can implement this later
+          .col-md-3.mb-3
+            .card.h-100
+              img.card-img-top(src="https://picsum.photos/200/150?random=201", alt="Producto relacionado")
+              .card-body
+                h6.card-title Producto Similar 1
+                p.text-primary.fw-bold $45
+          .col-md-3.mb-3
+            .card.h-100
+              img.card-img-top(src="https://picsum.photos/200/150?random=202", alt="Producto relacionado")
+              .card-body
+                h6.card-title Producto Similar 2
+                p.text-primary.fw-bold $78
+          .col-md-3.mb-3
+            .card.h-100
+              img.card-img-top(src="https://picsum.photos/200/150?random=203", alt="Producto relacionado")
+              .card-body
+                h6.card-title Producto Similar 3
+                p.text-primary.fw-bold $120
+          .col-md-3.mb-3
+            .card.h-100
+              img.card-img-top(src="https://picsum.photos/200/150?random=204", alt="Producto relacionado")
+              .card-body
+                h6.card-title Producto Similar 4
+                p.text-primary.fw-bold $35
+
+    // Back to Results
+    .row.mt-4
+      .col-12.text-center
+        a.btn.btn-outline-secondary.btn-lg(href="/") 
+          i.bi.bi-arrow-left.me-2
+          | Volver a los resultados
+
+  // Contact Tracking Script
+  script.
+    function trackContact(method) {
+      // This would normally send analytics data to track contact clicks
+      console.log(`Contact clicked: ${method} for item ${!{item.id}}`);
+      
+      // You could implement actual tracking here later
+      // fetch('/api/track-contact', { 
+      //   method: 'POST', 
+      //   body: JSON.stringify({ itemId: #{item.id}, method: method }),
+      //   headers: { 'Content-Type': 'application/json' }
+      // });
+    }
