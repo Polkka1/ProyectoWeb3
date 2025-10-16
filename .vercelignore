@@ -1,0 +1,10 @@
+# Ignore local dev and non-essential files for Vercel uploads
+.DS_Store
+.git/
+.gitignore
+node_modules/
+README.md
+README.vercel.md
+CRUD_Functions_Documentation.html
+convert_to_pdf.sh
+/docs/

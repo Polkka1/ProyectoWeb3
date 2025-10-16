@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
 //models
-require('./app_server/models/db');
+require('./app_api/models/db'); // incorporo el modelo al proyecto
 
 //routes
 const indexRouter = require('./app_server/routes/index');
@@ -13,6 +13,7 @@ const usersRouter = require('./app_server/routes/users');
 const itemsRouter = require('./app_server/routes/items');
 const authRouter = require('./app_server/routes/auth');
 const dashboardRouter = require('./app_server/routes/dashboard');
+const apiRouter = require('./app_api/routes/index'); //REST API
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/users', usersRouter);
 app.use('/items', itemsRouter);
 app.use('/auth', authRouter);
 app.use('/me', dashboardRouter);
+app.use('/api', apiRouter); // REST API
 
 // catch 404 and forward to error handlers
 app.use(function(req, res, next) {
