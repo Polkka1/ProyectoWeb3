@@ -16,16 +16,22 @@ if (process.platform === 'win32') {
     });
 }
 
-// define database connection string
-let dbURI = 'mongodb://localhost:27017/aplicacion_express_1';
+// define database connection string and target DB name
+const DB_NAME = 'campuswapdb';
+// Use base URI without a path; db name is enforced via options
+let dbURI = 'mongodb://localhost:27017';
 if (process.env.NODE_ENV === 'production') {
     dbURI = process.env.MONGODB_URI;
+    if (!dbURI) {
+      console.error('Missing MONGODB_URI environment variable in production.');
+      process.exit(1);
+    }
 }
 
 // connect to database
-mongoose.connect(dbURI)
+mongoose.connect(dbURI, { dbName: DB_NAME })
   .then(() => {
-    console.log('MongoDB connected successfully');
+    console.log('MongoDB connected successfully to database:', DB_NAME);
   })
   .catch(err => {
     console.error('MongoDB connection error:', err);
@@ -34,7 +40,7 @@ mongoose.connect(dbURI)
 
 // Connection events
 mongoose.connection.on('connected', () => {
-  console.log('Mongoose connected to ' + dbURI);
+  console.log('Mongoose connected to ' + dbURI + ' (db: ' + DB_NAME + ')');
 });
 
 mongoose.connection.on('error', err => {
