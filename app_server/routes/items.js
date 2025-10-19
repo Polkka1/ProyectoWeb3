@@ -1,7 +1,3 @@
-/* GET item publish success confirmation */
-router.get('/success', (req, res) => {
-	res.render('items/success', { title: 'Item Publicado - CampuSwap' });
-});
 const express = require('express');
 const router = express.Router();
 
@@ -21,5 +17,10 @@ router.post('/edit/:id', ctrlItems.editItemPost);
 
 /* GET item detail page */
 router.get('/:id', ctrlItems.itemDetail);
+
+/* GET item publish success confirmation */
+router.get('/success', (req, res) => {
+	res.render('items/success', { title: 'Item Publicado - CampuSwap' });
+});
 
 module.exports = router;

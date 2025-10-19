@@ -33,7 +33,7 @@ block content
                 div= error
 
             // Publish Form
-            form(method="POST", action="/api/items", novalidate)
+            form#itemForm(method="POST", action="/api/items", novalidate)
               .row
                 // Title
                 .col-12.mb-3
@@ -152,6 +152,8 @@ block content
 
               // Submit Button
               .d-grid.gap-2.mt-4
+                // Client-side error placeholder
+                #clientError.alert.alert-danger.d-none(role="alert")
                 button.btn.btn-primary.btn-lg(type="submit")
                   i.bi.bi-upload.me-2
                   | Publicar Item
@@ -229,3 +231,68 @@ block content
         }
       });
     });
+
+      // Intercept form submit to POST to API via fetch and redirect on success
+      const formEl = document.getElementById('itemForm');
+      const clientError = document.getElementById('clientError');
+      if (formEl) {
+        formEl.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          clientError && clientError.classList.add('d-none');
+
+          // Collect form data
+          const form = e.target;
+          const title = form.querySelector('#title')?.value?.trim();
+          const description = form.querySelector('#description')?.value?.trim();
+          const price = parseFloat(form.querySelector('#price')?.value || '0');
+          const category = form.querySelector('#category')?.value;
+          const condition = form.querySelector('#condition')?.value;
+          const whatsapp = form.querySelector('#whatsapp')?.value;
+          const imageInputs = form.querySelectorAll('input[name="images"]');
+          const images = Array.from(imageInputs)
+            .map(i => i.value.trim())
+            .filter(Boolean);
+
+          // Basic client validation
+          const errs = [];
+          if (!title || title.length < 3) errs.push('El título debe tener al menos 3 caracteres');
+          if (!description || description.length < 10) errs.push('La descripción debe tener al menos 10 caracteres');
+          if (!price || isNaN(price) || price <= 0) errs.push('El precio debe ser un número mayor a 0');
+          if (!category) errs.push('Selecciona una categoría');
+          if (!condition) errs.push('Selecciona la condición del producto');
+          if (images.length === 0) errs.push('Agrega al menos una imagen (URL)');
+          if (!whatsapp || !/^\d{9}$/.test(whatsapp)) errs.push('Ingresa un WhatsApp válido (9 dígitos)');
+
+          if (errs.length) {
+            if (clientError) {
+              clientError.textContent = errs.join('. ');
+              clientError.classList.remove('d-none');
+            }
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/items', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, description, price, category, condition, images, whatsapp })
+            });
+
+            if (res.ok) {
+              window.location.href = '/items/success';
+            } else {
+              const data = await res.json().catch(() => ({}));
+              const msg = data?.message || 'Error al crear el item.';
+              if (clientError) {
+                clientError.textContent = msg;
+                clientError.classList.remove('d-none');
+              }
+            }
+          } catch (err) {
+            if (clientError) {
+              clientError.textContent = 'Error de red o del servidor. Intenta de nuevo.';
+              clientError.classList.remove('d-none');
+            }
+          }
+        });
+      }
