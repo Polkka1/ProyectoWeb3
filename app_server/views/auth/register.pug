@@ -29,7 +29,10 @@ block content
                 div= success
 
             // Register Form
-            form(method="POST", action="/auth/register", novalidate)
+            // Note: JS will intercept submit and call REST API directly; action is a fallback
+            form#registerForm(method="POST", action="/auth/register", novalidate)
+              // Client alert placeholder (populated by JS)
+              #clientAlert
               .mb-3
                 label.form-label(for="name") Nombre Completo
                 .input-group
@@ -55,7 +58,7 @@ block content
                     name="email", 
                     placeholder="tu.nombre@student.usfq.edu.ec",
                     value=formData.email || '',
-                    pattern=".*@.*usfq.edu.ec$",
+                    pattern="^[^@\s]+@(.+\.)?usfq\.edu\.ec$",
                     required
                   )
                 .form-text Solo emails institucionales de USFQ (@student.usfq.edu.ec o @usfq.edu.ec)
@@ -154,10 +157,62 @@ block content
     
     // Email validation for USFQ domain
     const email = document.getElementById('email');
+    function isUSFQEmail(value) {
+      const at = value.indexOf('@');
+      if (at === -1) return false;
+      const domain = value.slice(at + 1).toLowerCase();
+      return domain.endsWith('usfq.edu.ec');
+    }
     email.addEventListener('input', function() {
-      if (!email.value.includes('@usfq.edu.ec')) {
+      if (!isUSFQEmail(email.value)) {
         email.setCustomValidity('Debes usar tu email institucional de USFQ');
       } else {
         email.setCustomValidity('');
+      }
+    });
+
+    // Submit form via REST API (AJAX)
+    const form = document.getElementById('registerForm');
+    const alertBox = document.getElementById('clientAlert');
+    function showAlert(type, message) {
+      alertBox.innerHTML = `
+        <div class="alert alert-${type} d-flex align-items-center" role="alert">
+          <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
+          <div>${message}</div>
+        </div>`;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      // simple client validation
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      if (password.value !== confirmPassword.value) {
+        showAlert('danger', 'Las contraseñas no coinciden');
+        return;
+      }
+
+      try {
+        const payload = {
+          name: document.getElementById('name').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value
+        };
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showAlert('danger', data.message || 'Error al registrar usuario.');
+          return;
+        }
+        showAlert('success', 'Cuenta creada exitosamente. Ahora puedes iniciar sesión.');
+        form.reset();
+      } catch (err) {
+        showAlert('danger', 'Error de red o del servidor. Intenta de nuevo.');
       }
     });

@@ -3,14 +3,9 @@
 const mongoose = require('mongoose');
 const users = mongoose.model('user');
 
-//Create new user
-const usersCreate = (req, res) => {
-    res
-    .status(200)
-    .json({
-        "status": "success usersCreate",
-    })
-}
+// Create new user → delegate to auth.register for consistency
+const { register: authRegister } = require('./auth');
+const usersCreate = (req, res) => authRegister(req, res);
 
 //User list
 const usersList = (req, res) => {

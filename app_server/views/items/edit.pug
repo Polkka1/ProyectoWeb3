@@ -1,0 +1,246 @@
+extends ../layout
+
+block content
+  .container.my-4
+    // Breadcrumb
+    nav(aria-label="breadcrumb")
+      ol.breadcrumb
+        li.breadcrumb-item
+          a(href="/") Inicio
+        li.breadcrumb-item
+          a(href="/me/items") Mis Items
+        li.breadcrumb-item.active(aria-current="page") Editar Item
+
+    .row.justify-content-center
+      .col-lg-8
+        .card.border-0.shadow
+          .card-body.p-4
+            // Header
+            .text-center.mb-4
+              .bg-warning.rounded-circle.d-inline-flex.align-items-center.justify-content-center.mb-3(style="width: 60px; height: 60px;")
+                i.bi.bi-pencil-square.text-white.fs-3
+              h2.fw-bold Editar Item
+              p.text-muted Actualiza la información de tu producto
+
+            // Success Alert
+            if success
+              .alert.alert-success.d-flex.align-items-center(role="alert")
+                i.bi.bi-check-circle-fill.me-2
+                div= success
+
+            // Error Alert
+            if error
+              .alert.alert-danger.d-flex.align-items-center(role="alert")
+                i.bi.bi-exclamation-triangle-fill.me-2
+                div= error
+
+            // Edit Form
+            form(method="POST", action=`/items/edit/${item._id}`, novalidate)
+              .row
+                // Title
+                .col-12.mb-3
+                  label.form-label(for="title") 
+                    i.bi.bi-tag.me-1
+                    | Título del producto *
+                  input.form-control(
+                    type="text", 
+                    id="title", 
+                    name="title", 
+                    placeholder="Ej: MacBook Pro 2021, Libro de Cálculo...",
+                    value=item.title || '',
+                    maxlength="100",
+                    required
+                  )
+                  .form-text Máximo 100 caracteres
+
+                // Category and Condition
+                .col-md-6.mb-3
+                  label.form-label(for="category")
+                    i.bi.bi-grid.me-1
+                    | Categoría *
+                  select.form-select(id="category", name="category", required)
+                    option(value="", selected=!item.category) Seleccionar categoría
+                    option(value="Libros", selected=item.category==='Libros') Libros
+                    option(value="Tecnología", selected=item.category==='Tecnología') Tecnología
+                    option(value="Arte", selected=item.category==='Arte') Arte y Diseño
+                    option(value="Hogar", selected=item.category==='Hogar') Hogar y Dormitorio
+                    option(value="Otros", selected=item.category==='Otros') Otros
+
+                .col-md-6.mb-3
+                  label.form-label(for="condition")
+                    i.bi.bi-star.me-1
+                    | Condición *
+                  select.form-select(id="condition", name="condition", required)
+                    option(value="", selected=!item.condition) Seleccionar condición
+                    option(value="Nuevo", selected=item.condition==='Nuevo') Nuevo
+                    option(value="Como nuevo", selected=item.condition==='Como nuevo') Como nuevo
+                    option(value="Usado", selected=item.condition==='Usado') Usado
+
+                // Price
+                .col-md-6.mb-3
+                  label.form-label(for="price")
+                    i.bi.bi-currency-dollar.me-1
+                    | Precio (USD) *
+                  .input-group
+                    span.input-group-text $
+                    input.form-control(
+                      type="number", 
+                      id="price", 
+                      name="price", 
+                      placeholder="0.00",
+                      value=item.price || '',
+                      min="0",
+                      step="0.01",
+                      required
+                    )
+
+                // WhatsApp
+                .col-md-6.mb-3
+                  label.form-label(for="whatsapp")
+                    i.bi.bi-whatsapp.me-1
+                    | WhatsApp
+                  .input-group
+                    span.input-group-text +593
+                    input.form-control(
+                      type="tel", 
+                      id="whatsapp", 
+                      name="whatsapp", 
+                      placeholder="987654321",
+                      value=item.whatsapp || '',
+                      pattern="[0-9]{9}",
+                      maxlength="9"
+                    )
+                  .form-text Solo números, sin el código del país
+
+                // Description
+                .col-12.mb-3
+                  label.form-label(for="description")
+                    i.bi.bi-card-text.me-1
+                    | Descripción *
+                  textarea.form-control(
+                    id="description", 
+                    name="description", 
+                    rows="4",
+                    placeholder="Describe tu producto: estado, características, razón de venta...",
+                    maxlength="500",
+                    required
+                  )= item.description || ''
+                  .form-text Máximo 500 caracteres
+
+                // Images
+                .col-12.mb-4
+                  label.form-label
+                    i.bi.bi-images.me-1
+                    | Imágenes *
+                  .card.bg-light
+                    .card-body
+                      p.mb-3.text-muted Ingresa URLs de imágenes
+
+                      #imageInputs
+                        - var imageCount = item.images && item.images.length > 0 ? item.images.length : 1
+                        - for (var i = 0; i < imageCount; i++)
+                          .input-group.mb-2
+                            span.input-group-text
+                              i.bi.bi-image
+                            input.form-control(
+                              type="url", 
+                              name="images", 
+                              placeholder=`https://ejemplo.com/imagen${i+1}.jpg`,
+                              value=item.images && item.images[i] ? item.images[i] : ''
+                            )
+                            if i === 0
+                              button.btn.btn-outline-success(type="button", onclick="addImageInput()")
+                                i.bi.bi-plus
+                            else
+                              button.btn.btn-outline-danger(type="button", onclick="removeImageInput(this)")
+                                i.bi.bi-dash
+
+                      .form-text Agrega al menos una imagen. Máximo 4 imágenes.
+
+                // Available Status
+                .col-12.mb-3
+                  .form-check.form-switch
+                    input.form-check-input(type="checkbox", id="isAvailable", name="isAvailable", checked=item.isAvailable !== false, value="true")
+                    label.form-check-label(for="isAvailable") Producto disponible para la venta
+
+              // Submit Buttons
+              .d-grid.gap-2.mt-4
+                button.btn.btn-warning.btn-lg(type="submit")
+                  i.bi.bi-save.me-2
+                  | Guardar Cambios
+
+              // Back Button
+              .text-center.mt-3
+                a.btn.btn-outline-secondary(href="/me/items")
+                  i.bi.bi-arrow-left.me-2
+                  | Cancelar
+
+  // JavaScript for dynamic image inputs
+  script.
+    let imageInputCount = #{item.images && item.images.length > 0 ? item.images.length : 1};
+    const maxImages = 4;
+
+    function addImageInput() {
+      if (imageInputCount < maxImages) {
+        imageInputCount++;
+        const container = document.getElementById('imageInputs');
+        const newInputGroup = document.createElement('div');
+        newInputGroup.className = 'input-group mb-2';
+        newInputGroup.innerHTML = `
+          <span class="input-group-text">
+            <i class="bi bi-image"></i>
+          </span>
+          <input type="url" class="form-control" name="images" placeholder="https://ejemplo.com/imagen${imageInputCount}.jpg">
+          <button type="button" class="btn btn-outline-danger" onclick="removeImageInput(this)">
+            <i class="bi bi-dash"></i>
+          </button>
+        `;
+        container.appendChild(newInputGroup);
+
+        // Hide add button if max reached
+        if (imageInputCount >= maxImages) {
+          event.target.style.display = 'none';
+        }
+      }
+    }
+
+    function removeImageInput(button) {
+      button.parentElement.remove();
+      imageInputCount--;
+      
+      // Show add button again
+      const addButton = document.querySelector('button[onclick="addImageInput()"]');
+      if (addButton) {
+        addButton.style.display = 'block';
+      }
+    }
+
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('form');
+      const priceInput = document.getElementById('price');
+      const whatsappInput = document.getElementById('whatsapp');
+
+      // Price validation
+      priceInput.addEventListener('input', function() {
+        if (this.value < 0) {
+          this.setCustomValidity('El precio debe ser mayor a 0');
+        } else {
+          this.setCustomValidity('');
+        }
+      });
+
+      // WhatsApp validation
+      if (whatsappInput.value) {
+        whatsappInput.addEventListener('input', function() {
+          const value = this.value.replace(/\D/g, '');
+          this.value = value;
+          
+          if (value.length > 0 && value.length !== 9) {
+            this.setCustomValidity('Debe tener exactamente 9 dígitos');
+          } else {
+            this.setCustomValidity('');
+          }
+        });
+      }
+    });

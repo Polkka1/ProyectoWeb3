@@ -1,3 +1,5 @@
+const request = require('request');
+
 // GET item detail page
 const itemDetail = (req, res, next) => {
   const itemId = req.params.id;
@@ -190,48 +192,23 @@ const newItemGet = (req, res, next) => {
 // POST new item
 const newItemPost = (req, res, next) => {
   const { title, description, price, category, condition, images, whatsapp } = req.body;
-  
-  // Basic validation
+
+  // Basic validation (client-friendly)
   const errors = [];
-  
-  if (!title || title.trim().length < 3) {
-    errors.push('El título debe tener al menos 3 caracteres');
-  }
-  
-  if (!description || description.trim().length < 10) {
-    errors.push('La descripción debe tener al menos 10 caracteres');
-  }
-  
-  if (!price || isNaN(price) || parseFloat(price) <= 0) {
-    errors.push('El precio debe ser un número mayor a 0');
-  }
-  
-  if (!category) {
-    errors.push('Selecciona una categoría');
-  }
-  
-  if (!condition) {
-    errors.push('Selecciona la condición del producto');
-  }
-  
-  if (!whatsapp || whatsapp.length < 10) {
-    errors.push('Ingresa un número de WhatsApp válido');
-  }
-  
-  // Process images (convert single string to array if needed)
+  if (!title || title.trim().length < 3) errors.push('El título debe tener al menos 3 caracteres');
+  if (!description || description.trim().length < 10) errors.push('La descripción debe tener al menos 10 caracteres');
+  if (!price || isNaN(price) || parseFloat(price) <= 0) errors.push('El precio debe ser un número mayor a 0');
+  if (!category) errors.push('Selecciona una categoría');
+  if (!condition) errors.push('Selecciona la condición del producto');
+
+  // Process images (normalize to array)
   let imageArray = [];
   if (images) {
-    if (Array.isArray(images)) {
-      imageArray = images.filter(img => img.trim() !== '');
-    } else {
-      imageArray = [images.trim()].filter(img => img !== '');
-    }
+    if (Array.isArray(images)) imageArray = images.filter(img => img.trim() !== '');
+    else imageArray = [images.trim()].filter(img => img !== '');
   }
-  
-  if (imageArray.length === 0) {
-    errors.push('Agrega al menos una imagen (URL)');
-  }
-  
+  if (imageArray.length === 0) errors.push('Agrega al menos una imagen (URL)');
+
   if (errors.length > 0) {
     return res.render('items/new', {
       title: 'Publicar Nuevo Item - CampuSwap',
@@ -240,37 +217,152 @@ const newItemPost = (req, res, next) => {
       formData: { title, description, price, category, condition, images, whatsapp }
     });
   }
-  
-  // Simulate creating new item (in real app, save to database)
-  const newItem = {
-    id: Date.now(), // Simple ID generation for demo
-    title: title.trim(),
-    description: description.trim(),
-    price: parseFloat(price),
-    category,
-    condition,
-    images: imageArray,
-    seller: {
-      name: "Usuario Demo", // In real app, get from session
-      email: "demo@usfq.edu.ec", 
-      whatsapp: whatsapp
-    },
-    createdAt: new Date().toISOString().split('T')[0],
-    contactClicks: 0
-  };
-  
-  console.log('New item would be created:', newItem);
-  
-  res.render('items/new', {
-    title: 'Publicar Nuevo Item - CampuSwap',
-    error: null,
-    success: 'Item publicado exitosamente! Podrás verlo en "Mis Items".',
-    formData: {}
+
+  // Call REST API to actually create the item
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
+  request.post({
+    url: apiUrl,
+    json: true,
+    body: {
+      title: title.trim(),
+      description: description.trim(),
+      price: parseFloat(price),
+      category,
+      condition,
+      images: imageArray,
+      whatsapp
+    }
+  }, (err, apiRes, body) => {
+    if (err) {
+      return res.render('items/new', {
+        title: 'Publicar Nuevo Item - CampuSwap',
+        error: 'Error de red o del servidor. Intenta de nuevo.',
+        success: null,
+        formData: { title, description, price, category, condition, images, whatsapp }
+      });
+    }
+    if (!apiRes || apiRes.statusCode >= 400) {
+      return res.render('items/new', {
+        title: 'Publicar Nuevo Item - CampuSwap',
+        error: (body && body.message) || 'Error al crear el item.',
+        success: null,
+        formData: { title, description, price, category, condition, images, whatsapp }
+      });
+    }
+
+    // Success
+    return res.render('items/new', {
+      title: 'Publicar Nuevo Item - CampuSwap',
+      error: null,
+      success: 'Item publicado exitosamente! Podrás verlo en "Mis Items".',
+      formData: {}
+    });
   });
 };
+
+// GET edit item form
+const editItemGet = (req, res, next) => {
+  const itemId = req.params.id;
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items/${itemId}`;
+
+  request.get({ url: apiUrl, json: true }, (err, apiRes, body) => {
+    if (err || !apiRes || apiRes.statusCode >= 400) {
+      return res.status(404).render('error', {
+        title: 'Item no encontrado',
+        message: 'El item que intentas editar no existe o no está disponible.',
+        error: { status: 404 }
+      });
+    }
+
+    const item = body.item || body;
+    res.render('items/edit', {
+      title: 'Editar Item - CampuSwap',
+      error: null,
+      success: null,
+      item: item
+    });
+  });
+};
+
+// POST edit item
+const editItemPost = (req, res, next) => {
+  const itemId = req.params.id;
+  const { title, description, price, category, condition, images, whatsapp, isAvailable } = req.body;
+
+  // Basic validation
+  const errors = [];
+  if (!title || title.trim().length < 3) errors.push('El título debe tener al menos 3 caracteres');
+  if (!description || description.trim().length < 10) errors.push('La descripción debe tener al menos 10 caracteres');
+  if (!price || isNaN(price) || parseFloat(price) <= 0) errors.push('El precio debe ser un número mayor a 0');
+  if (!category) errors.push('Selecciona una categoría');
+  if (!condition) errors.push('Selecciona la condición del producto');
+
+  // Process images
+  let imageArray = [];
+  if (images) {
+    if (Array.isArray(images)) imageArray = images.filter(img => img.trim() !== '');
+    else imageArray = [images.trim()].filter(img => img !== '');
+  }
+  if (imageArray.length === 0) errors.push('Agrega al menos una imagen (URL)');
+
+  if (errors.length > 0) {
+    return res.render('items/edit', {
+      title: 'Editar Item - CampuSwap',
+      error: errors.join('. '),
+      success: null,
+      item: { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
+    });
+  }
+
+  // Call REST API to update
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items/${itemId}`;
+  request.put({
+    url: apiUrl,
+    json: true,
+    body: {
+      title: title.trim(),
+      description: description.trim(),
+      price: parseFloat(price),
+      category,
+      condition,
+      images: imageArray,
+      whatsapp,
+      isAvailable: isAvailable === 'true' || isAvailable === true
+    }
+  }, (err, apiRes, body) => {
+    if (err) {
+      return res.render('items/edit', {
+        title: 'Editar Item - CampuSwap',
+        error: 'Error de red o del servidor. Intenta de nuevo.',
+        success: null,
+        item: { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
+      });
+    }
+    if (!apiRes || apiRes.statusCode >= 400) {
+      return res.render('items/edit', {
+        title: 'Editar Item - CampuSwap',
+        error: (body && body.message) || 'Error al actualizar el item.',
+        success: null,
+        item: { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
+      });
+    }
+
+    // Success
+    return res.render('items/edit', {
+      title: 'Editar Item - CampuSwap',
+      error: null,
+      success: 'Item actualizado exitosamente!',
+      item: body.item || { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
+    });
+  });
+};
+
+module.exports.editItemGet = editItemGet;
 
 module.exports = {
   itemDetail,
   newItemGet,
-  newItemPost
+  newItemPost,
+  editItemGet,
+  editItemPost
 };

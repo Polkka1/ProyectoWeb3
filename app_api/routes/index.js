@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const ctrlUsers = require('../controllers/users'); //import the users controller
+const ctrlAuth = require('../controllers/auth'); //import the auth controller
 const ctrlItems = require('../controllers/items'); //import the items controller
 const ctrlCategories = require('../controllers/categories'); //import the categories controller
 const ctrlReviews = require('../controllers/reviews'); //import the reviews controller
@@ -25,7 +26,7 @@ router.get('/health', (req, res) => {
 
 router
     .route('/users')
-    .post(ctrlUsers.usersCreate) //create user
+    .post(ctrlAuth.register) //create user (moved to auth controller)
     .get(ctrlUsers.usersList); //list users
 
 router
@@ -146,5 +147,14 @@ router
 router
     .route('/notifications/unread-count/:userId')
     .get(ctrlNotifications.notificationsUnreadCount); //get unread count
+
+// auth routes
+router
+    .route('/auth/login')
+    .post(ctrlAuth.login);
+
+router
+    .route('/auth/register')
+    .post(ctrlAuth.register);
 
 module.exports = router;

@@ -7,18 +7,19 @@ const itemsSchema = new mongoose.Schema({
     price: { type: Number, required: true, min: 0 },
     category: { 
         type: String, 
-        enum: ['Electronics', 'Clothing', 'Books', 'Home & Garden', 'Sports', 'Automotive', 'Other'],
+        enum: ['Libros', 'Tecnología', 'Arte', 'Hogar', 'Otros'],
         required: true
     },
     condition: {
         type: String,
-        enum: ['New', 'Like New', 'Good', 'Fair', 'Poor'],
+        enum: ['Nuevo', 'Como nuevo', 'Usado'],
         required: true
     },
-    sellerId: { type: Number, required: true },
-    sellerName: { type: String, required: true },
+    sellerId: { type: Number },
+    sellerName: { type: String },
+    whatsapp: { type: String },
     location: { type: String },
-    images: [String], // Array of image URLs
+    images: [String], // Array de URLs de imágenes
     isAvailable: { type: Boolean, default: true },
     views: { type: Number, default: 0 },
     created: { type: Date, default: Date.now },
@@ -30,13 +31,14 @@ const Item = mongoose.model('item', itemsSchema);
 
 const item = new Item({
     title: 'iPhone 13 Pro',
-    description: 'Excellent condition iPhone 13 Pro, 256GB storage, includes original box and charger',
+    description: 'iPhone 13 Pro en excelente estado, 256GB, incluye caja y cargador',
     itemId: 100001,
     price: 850,
-    category: 'Electronics',
-    condition: 'Like New',
+    category: 'Tecnología',
+    condition: 'Como nuevo',
     sellerId: 123456,
     sellerName: 'María González',
+    whatsapp: '987654321',
     location: 'Las Flores',
     images: ['https://example.com/iphone1.jpg', 'https://example.com/iphone2.jpg'],
     isAvailable: true

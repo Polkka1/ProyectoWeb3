@@ -1,0 +1,24 @@
+extends layout
+
+block content
+  h1 Admin Dashboard
+  if error
+    p.text-danger #{error}
+  table.table
+    thead
+      tr
+        th Título
+        th Precio
+        th Categoría
+        th Estado
+        th Acciones
+    tbody
+      each item in items
+        tr
+          td #{item.title}
+          td $#{item.price}
+          td #{item.category}
+          td #{item.condition}
+          td
+            form(method="post", action=`/admin/items/${item._id}/delete`, onsubmit="return confirm('¿Seguro que deseas eliminar este item?');")
+              button.btn.btn-danger(type="submit") Eliminar
