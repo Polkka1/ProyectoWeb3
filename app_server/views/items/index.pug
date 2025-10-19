@@ -1,0 +1,41 @@
+extends ../layout
+
+block content
+  .container.my-4
+    // Header
+    .d-flex.align-items-center.justify-content-between.mb-3
+      h2.fw-bold.mb-0 Items
+      a.btn.btn-primary(href='/items/new')
+        i.bi.bi-plus.me-2
+        | Publicar Item
+
+    if error
+      .alert.alert-danger(role='alert') #{error}
+
+    if items.length === 0
+      .text-center.text-muted.py-5
+        i.bi.bi-inbox.fs-1.d-block.mb-2
+        p No hay items publicados aún.
+    else
+      .row.row-cols-1.row-cols-sm-2.row-cols-md-3.g-3
+        each item in items
+          .col
+            .card.h-100.shadow-sm
+              if item.images && item.images.length
+                img.card-img-top(src=item.images[0], alt=item.title)
+              else
+                img.card-img-top(src='https://picsum.photos/600/400?grayscale', alt='placeholder')
+              .card-body
+                h5.card-title.mb-1= item.title
+                .text-muted.small.mb-2
+                  span.me-2
+                    i.bi.bi-tag
+                    |  #{item.category}
+                  span
+                    i.bi.bi-star
+                    |  #{item.condition}
+                p.fw-semibold.mb-0 $#{item.price}
+              .card-footer.bg-transparent.border-0
+                a.btn.btn-outline-primary.w-100(href=`/items/${item._id || item.id}`)
+                  i.bi.bi-eye.me-1
+                  | Ver detalle

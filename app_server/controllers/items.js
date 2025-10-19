@@ -1,5 +1,24 @@
 const request = require('request');
 
+// GET public items list page
+const itemsListPage = (req, res) => {
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
+  request.get({ url: apiUrl, json: true }, (err, apiRes, body) => {
+    if (err || !apiRes || apiRes.statusCode >= 400 || !Array.isArray(body)) {
+      return res.render('items/index', {
+        title: 'Items - CampuSwap',
+        error: 'No se pudieron cargar los items.',
+        items: []
+      });
+    }
+    res.render('items/index', {
+      title: 'Items - CampuSwap',
+      error: null,
+      items: body
+    });
+  });
+};
+
 // GET item detail page
 const itemDetail = (req, res, next) => {
   const itemId = req.params.id;
@@ -355,6 +374,7 @@ const editItemPost = (req, res, next) => {
 module.exports.editItemGet = editItemGet;
 
 module.exports = {
+  itemsListPage,
   itemDetail,
   newItemGet,
   newItemPost,

@@ -3,6 +3,9 @@ const router = express.Router();
 
 const ctrlItems = require('../controllers/items');
 
+/* GET items list */
+router.get('/', ctrlItems.itemsListPage);
+
 /* GET new item form */
 router.get('/new', ctrlItems.newItemGet);
 
