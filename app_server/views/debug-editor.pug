@@ -5,12 +5,37 @@ block content
     h2 Debug Editor
     p.text-muted Herramienta para probar acciones CRUD sobre categorías.
 
+
     // Create Category
     h4.mt-4 Crear nueva categoría
     .mb-3
       input#categoryName.form-control(type="text", placeholder="Nombre de la categoría")
     button.btn.btn-success.mb-3(onclick="createCategory()") Crear Categoría
     div#categoryCreateResult.mt-2
+
+    // Create Review
+    h4.mt-5 Crear nueva reseña
+    .row.mb-2
+      .col-md-4.mb-2
+        input#reviewItemId.form-control(type="number", placeholder="itemId")
+      .col-md-4.mb-2
+        input#reviewReviewerId.form-control(type="number", placeholder="reviewerId")
+      .col-md-4.mb-2
+        input#reviewSellerId.form-control(type="number", placeholder="sellerId")
+    .row.mb-2
+      .col-md-6.mb-2
+        input#reviewReviewerName.form-control(type="text", placeholder="Nombre del revisor")
+      .col-md-6.mb-2
+        input#reviewRating.form-control(type="number", min="1", max="5", placeholder="Rating (1-5)")
+    .mb-2
+      input#reviewTitle.form-control(type="text", placeholder="Título de la reseña")
+    .mb-2
+      textarea#reviewComment.form-control(rows="2", placeholder="Comentario")
+    .form-check.mb-2
+      input#reviewPurchaseVerified.form-check-input(type="checkbox")
+      label.form-check-label(for="reviewPurchaseVerified") Compra verificada
+    button.btn.btn-primary.mb-3(onclick="createReview()") Crear Reseña
+    div#reviewCreateResult.mt-2
 
   script.
     async function createCategory() {
@@ -29,5 +54,32 @@ block content
         document.getElementById('categoryCreateResult').textContent = data.status || 'Respuesta recibida.';
       } catch (err) {
         document.getElementById('categoryCreateResult').textContent = 'Error de red o servidor.';
+      }
+    }
+
+    async function createReview() {
+      const itemId = parseInt(document.getElementById('reviewItemId').value);
+      const reviewerId = parseInt(document.getElementById('reviewReviewerId').value);
+      const sellerId = parseInt(document.getElementById('reviewSellerId').value);
+      const reviewerName = document.getElementById('reviewReviewerName').value.trim();
+      const rating = parseInt(document.getElementById('reviewRating').value);
+      const title = document.getElementById('reviewTitle').value.trim();
+      const comment = document.getElementById('reviewComment').value.trim();
+      const purchaseVerified = document.getElementById('reviewPurchaseVerified').checked;
+
+      if (!itemId || !reviewerId || !sellerId || !reviewerName || !rating || !title || !comment) {
+        document.getElementById('reviewCreateResult').textContent = 'Completa todos los campos requeridos.';
+        return;
+      }
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId, reviewerId, reviewerName, sellerId, rating, title, comment, purchaseVerified })
+        });
+        const data = await res.json();
+        document.getElementById('reviewCreateResult').textContent = data.status || 'Respuesta recibida.';
+      } catch (err) {
+        document.getElementById('reviewCreateResult').textContent = 'Error de red o servidor.';
       }
     }
