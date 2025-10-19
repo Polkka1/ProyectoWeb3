@@ -16,6 +16,7 @@ const reviewsCreate = async (req, res) => {
         if (!title || title.trim().length < 2) errors.push('Título requerido');
         if (!comment || comment.trim().length < 5) errors.push('Comentario requerido');
         if (errors.length) {
+            console.error('Review validation errors:', errors);
             return res.status(400).json({ status: 'error', message: errors.join('. ') });
         }
 
@@ -53,6 +54,7 @@ const reviewsCreate = async (req, res) => {
             }
         });
     } catch (err) {
+        console.error('Review creation error:', err);
         if (err && err.code === 11000) {
             return res.status(409).json({ status: 'error', message: 'Ya existe una reseña con ese ID.' });
         }
