@@ -9,7 +9,7 @@ html
 
   body
     nav.navbar.navbar-expand-lg.navbar-light.bg-light.border-bottom
-      .container
+      .container-fluid
         a.navbar-brand.fw-bold(href="/") 
           i.bi.bi-arrow-repeat.me-2
           | CampuSwap
@@ -36,9 +36,9 @@ html
             li.nav-item
               a.btn.btn-outline-primary.ms-2(href="/auth/register") Registrarse
 
-    main
+    main.container-fluid.px-0
       block content
 
     footer.bg-light.py-4.mt-5
-      .container.text-center.text-muted
+      .container-fluid.text-center.text-muted
         p &copy; 2025 CampuSwap - Mercado de segunda mano USFQ
