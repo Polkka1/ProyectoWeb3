@@ -5,6 +5,7 @@ const items = mongoose.model('item');
 
 // Create new item
 const itemsCreate = async (req, res) => {
+    console.log('itemsCreate called. req.body:', req.body);
     try {
         const { title, description, price, category, condition, images, whatsapp, sellerId, sellerName, location } = req.body;
         const errors = [];
@@ -27,6 +28,7 @@ const itemsCreate = async (req, res) => {
         if (imageArray.length === 0) errors.push('Agrega al menos una imagen (URL)');
 
         if (errors.length > 0) {
+            console.log('Validation errors:', errors);
             return res.status(400).json({ status: 'error', message: errors.join('. ') });
         }
 
@@ -48,6 +50,7 @@ const itemsCreate = async (req, res) => {
             itemId: nextItemId
         });
         await newItem.save();
+        console.log('Item created successfully:', newItem);
         return res.status(201).json({
             status: 'success',
             message: 'Item creado exitosamente.',
@@ -61,6 +64,7 @@ const itemsCreate = async (req, res) => {
             }
         });
     } catch (err) {
+        console.error('Error creating item:', err);
         if (err && err.code === 11000) {
             return res.status(409).json({ status: 'error', message: 'Ya existe un item con ese ID.' });
         }
