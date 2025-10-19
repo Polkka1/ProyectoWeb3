@@ -28,15 +28,14 @@ block content
       .col-md-6.mb-2
         input#reviewRating.form-control(type="number", min="1", max="5", placeholder="Rating (1-5)", value="5")
     .mb-2
-  input#reviewTitle.form-control(type="text", placeholder="Título de la reseña", value="Excelente producto!")
+      input#reviewTitle.form-control(type="text", placeholder="Título de la reseña", value="Excelente producto!")
     .mb-2
-      textarea#reviewComment.form-control(rows="2", placeholder="Comentario")
-        | Excelente atención y el producto llegó rápido.
+      textarea#reviewComment.form-control(rows="2", placeholder="Comentario") Excelente atención y el producto llegó rápido.
     .form-check.mb-2
-  input#reviewPurchaseVerified.form-check-input(type="checkbox", checked)
+      input#reviewPurchaseVerified.form-check-input(type="checkbox", checked)
       label.form-check-label(for="reviewPurchaseVerified") Compra verificada
-      button.btn.btn-primary.mb-3(onclick="createReview()") Crear Reseña
-      div#reviewCreateResult.mt-2
+    button.btn.btn-primary.mb-3(onclick="createReview()") Crear Reseña
+    div#reviewCreateResult.mt-2
 
   script.
     async function createCategory() {
