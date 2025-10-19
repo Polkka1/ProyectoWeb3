@@ -17,22 +17,22 @@ block content
     h4.mt-5 Crear nueva reseña
     .row.mb-2
       .col-md-4.mb-2
-        input#reviewItemId.form-control(type="number", placeholder="itemId")
+        input#reviewItemId.form-control(type="number", placeholder="itemId", value="100001")
       .col-md-4.mb-2
-        input#reviewReviewerId.form-control(type="number", placeholder="reviewerId")
+        input#reviewReviewerId.form-control(type="number", placeholder="reviewerId", value="654321")
       .col-md-4.mb-2
-        input#reviewSellerId.form-control(type="number", placeholder="sellerId")
+        input#reviewSellerId.form-control(type="number", placeholder="sellerId", value="123456")
     .row.mb-2
       .col-md-6.mb-2
-        input#reviewReviewerName.form-control(type="text", placeholder="Nombre del revisor")
+        input#reviewReviewerName.form-control(type="text", placeholder="Nombre del revisor", value="John Doe")
       .col-md-6.mb-2
-        input#reviewRating.form-control(type="number", min="1", max="5", placeholder="Rating (1-5)")
+        input#reviewRating.form-control(type="number", min="1", max="5", placeholder="Rating (1-5)", value="5")
     .mb-2
-      input#reviewTitle.form-control(type="text", placeholder="Título de la reseña")
+  input#reviewTitle.form-control(type="text", placeholder="Título de la reseña", value="Excelente producto!")
     .mb-2
-      textarea#reviewComment.form-control(rows="2", placeholder="Comentario")
+  textarea#reviewComment.form-control(rows="2", placeholder="Comentario") Excelente atención y el producto llegó rápido.
     .form-check.mb-2
-      input#reviewPurchaseVerified.form-check-input(type="checkbox")
+  input#reviewPurchaseVerified.form-check-input(type="checkbox", checked)
       label.form-check-label(for="reviewPurchaseVerified") Compra verificada
     button.btn.btn-primary.mb-3(onclick="createReview()") Crear Reseña
     div#reviewCreateResult.mt-2
