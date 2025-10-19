@@ -11,8 +11,8 @@ const categoriesCreate = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'El nombre es requerido y debe tener al menos 2 caracteres.' });
         }
 
-        // Generate incremental categoryId
-        const Category = require('../models/schema-categories');
+    // Generate incremental categoryId using registered model
+    const Category = mongoose.model('category');
         const maxCat = await Category.findOne({}, {}, { sort: { categoryId: -1 } });
         const nextCategoryId = maxCat ? maxCat.categoryId + 1 : 1;
 

@@ -20,8 +20,8 @@ const reviewsCreate = async (req, res) => {
             return res.status(400).json({ status: 'error', message: errors.join('. ') });
         }
 
-        // Generate incremental reviewId
-        const Review = require('../models/schema-reviews');
+    // Generate incremental reviewId using registered model
+    const Review = mongoose.model('review');
         const maxReview = await Review.findOne({}, {}, { sort: { reviewId: -1 } });
         const nextReviewId = maxReview ? maxReview.reviewId + 1 : 1001;
 
