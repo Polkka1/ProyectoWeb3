@@ -1,0 +1,9 @@
+extends ../layout
+
+block content
+  .container.mt-5
+    .alert.alert-success
+      h2 ¡Item publicado exitosamente!
+      p Tu item ha sido publicado y está disponible en la plataforma.
+    a.btn.btn-primary(href='/items') Volver al listado de items
+    a.btn.btn-secondary.ms-2(href='/items/new') Publicar otro item

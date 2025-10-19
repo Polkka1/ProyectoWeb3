@@ -1,3 +1,7 @@
+/* GET item publish success confirmation */
+router.get('/success', (req, res) => {
+	res.render('items/success', { title: 'Item Publicado - CampuSwap' });
+});
 const express = require('express');
 const router = express.Router();
 

@@ -250,13 +250,8 @@ const newItemPost = (req, res, next) => {
       });
     }
 
-    // Success
-    return res.render('items/new', {
-      title: 'Publicar Nuevo Item - CampuSwap',
-      error: null,
-      success: 'Item publicado exitosamente! Podrás verlo en "Mis Items".',
-      formData: {}
-    });
+    // Success: redirect to confirmation page
+    return res.redirect('/items/success');
   });
 };
 
