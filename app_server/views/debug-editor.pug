@@ -1,0 +1,33 @@
+extends layout
+
+block content
+  .container.my-5
+    h2 Debug Editor
+    p.text-muted Herramienta para probar acciones CRUD sobre categorías.
+
+    // Create Category
+    h4.mt-4 Crear nueva categoría
+    .mb-3
+      input#categoryName.form-control(type="text", placeholder="Nombre de la categoría")
+    button.btn.btn-success.mb-3(onclick="createCategory()") Crear Categoría
+    div#categoryCreateResult.mt-2
+
+  script.
+    async function createCategory() {
+      const name = document.getElementById('categoryName').value.trim();
+      if (!name) {
+        document.getElementById('categoryCreateResult').textContent = 'Debes ingresar un nombre.';
+        return;
+      }
+      try {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        document.getElementById('categoryCreateResult').textContent = data.status || 'Respuesta recibida.';
+      } catch (err) {
+        document.getElementById('categoryCreateResult').textContent = 'Error de red o servidor.';
+      }
+    }

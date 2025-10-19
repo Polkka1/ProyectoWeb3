@@ -14,6 +14,7 @@ const itemsRouter = require('./app_server/routes/items');
 const authRouter = require('./app_server/routes/auth');
 const dashboardRouter = require('./app_server/routes/dashboard');
 const adminRouter = require('./app_server/routes/admin');
+const debugRouter = require('./app_server/routes/debug');
 const apiRouter = require('./app_api/routes/index'); //REST API
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/items', itemsRouter);
 app.use('/auth', authRouter);
 app.use('/me', dashboardRouter);
 app.use('/admin', adminRouter);
+app.use('/debug', debugRouter);
 app.use('/api', apiRouter); // REST API
 
 // catch 404 and forward to error handlers
