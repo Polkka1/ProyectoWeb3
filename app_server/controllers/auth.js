@@ -1,3 +1,5 @@
+const axios = require('axios');
+
 // GET login page
 const loginGet = (req, res, next) => {
   res.render('auth/login', { 
@@ -7,9 +9,8 @@ const loginGet = (req, res, next) => {
   });
 };
 
-const request = require('request');
 // POST login
-const loginPost = (req, res, next) => {
+const loginPost = async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.render('auth/login', {
@@ -19,24 +20,19 @@ const loginPost = (req, res, next) => {
     });
   }
   const apiUrl = `${req.protocol}://${req.get('host')}/api/auth/login`;
-  request.post({ url: apiUrl, json: true, body: { email, password } }, (err, apiRes, body) => {
-    if (err) {
-      return res.render('auth/login', {
-        title: 'Iniciar Sesión - CampuSwap',
-        error: 'Error de red o del servidor. Intenta de nuevo.',
-        formData: { email }
-      });
-    }
-    if (!apiRes || apiRes.statusCode >= 400) {
-      return res.render('auth/login', {
-        title: 'Iniciar Sesión - CampuSwap',
-        error: (body && body.message) || 'Email o contraseña incorrectos',
-        formData: { email }
-      });
-    }
+  try {
+    await axios.post(apiUrl, { email, password });
     // Success → redirect to dashboard (session handling could be added later)
     return res.redirect('/me/items');
-  });
+  } catch (err) {
+    console.error('Login error:', err.message);
+    const errorMessage = err.response?.data?.message || 'Email o contraseña incorrectos';
+    return res.render('auth/login', {
+      title: 'Iniciar Sesión - CampuSwap',
+      error: errorMessage,
+      formData: { email }
+    });
+  }
 };
 
 // GET register page

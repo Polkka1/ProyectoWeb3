@@ -1,22 +1,30 @@
-const request = require('request');
+const axios = require('axios');
 
 // GET public items list page
-const itemsListPage = (req, res) => {
+const itemsListPage = async (req, res) => {
   const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
-  request.get({ url: apiUrl, json: true }, (err, apiRes, body) => {
-    if (err || !apiRes || apiRes.statusCode >= 400 || !Array.isArray(body)) {
+  try {
+    const response = await axios.get(apiUrl);
+    if (Array.isArray(response.data)) {
       return res.render('items/index', {
         title: 'Items - CampuSwap',
-        error: 'No se pudieron cargar los items.',
-        items: []
+        error: null,
+        items: response.data
       });
     }
     res.render('items/index', {
       title: 'Items - CampuSwap',
-      error: null,
-      items: body
+      error: 'No se pudieron cargar los items.',
+      items: []
     });
-  });
+  } catch (err) {
+    console.error('Error fetching items:', err.message);
+    res.render('items/index', {
+      title: 'Items - CampuSwap',
+      error: 'No se pudieron cargar los items.',
+      items: []
+    });
+  }
 };
 
 // GET item detail page
@@ -209,7 +217,7 @@ const newItemGet = (req, res, next) => {
 };
 
 // POST new item
-const newItemPost = (req, res, next) => {
+const newItemPost = async (req, res, next) => {
   const { title, description, price, category, condition, images, whatsapp } = req.body;
 
   // Basic validation (client-friendly)
@@ -239,10 +247,8 @@ const newItemPost = (req, res, next) => {
 
   // Call REST API to actually create the item
   const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
-  request.post({
-    url: apiUrl,
-    json: true,
-    body: {
+  try {
+    await axios.post(apiUrl, {
       title: title.trim(),
       description: description.trim(),
       price: parseFloat(price),
@@ -250,56 +256,47 @@ const newItemPost = (req, res, next) => {
       condition,
       images: imageArray,
       whatsapp
-    }
-  }, (err, apiRes, body) => {
-    if (err) {
-      return res.render('items/new', {
-        title: 'Publicar Nuevo Item - CampuSwap',
-        error: 'Error de red o del servidor. Intenta de nuevo.',
-        success: null,
-        formData: { title, description, price, category, condition, images, whatsapp }
-      });
-    }
-    if (!apiRes || apiRes.statusCode >= 400) {
-      return res.render('items/new', {
-        title: 'Publicar Nuevo Item - CampuSwap',
-        error: (body && body.message) || 'Error al crear el item.',
-        success: null,
-        formData: { title, description, price, category, condition, images, whatsapp }
-      });
-    }
-
+    });
     // Success: redirect to confirmation page
     return res.redirect('/items/success');
-  });
+  } catch (err) {
+    console.error('Error creating item:', err.message);
+    const errorMessage = err.response?.data?.message || 'Error de red o del servidor. Intenta de nuevo.';
+    return res.render('items/new', {
+      title: 'Publicar Nuevo Item - CampuSwap',
+      error: errorMessage,
+      success: null,
+      formData: { title, description, price, category, condition, images, whatsapp }
+    });
+  }
 };
 
 // GET edit item form
-const editItemGet = (req, res, next) => {
+const editItemGet = async (req, res, next) => {
   const itemId = req.params.id;
   const apiUrl = `${req.protocol}://${req.get('host')}/api/items/${itemId}`;
 
-  request.get({ url: apiUrl, json: true }, (err, apiRes, body) => {
-    if (err || !apiRes || apiRes.statusCode >= 400) {
-      return res.status(404).render('error', {
-        title: 'Item no encontrado',
-        message: 'El item que intentas editar no existe o no está disponible.',
-        error: { status: 404 }
-      });
-    }
-
-    const item = body.item || body;
+  try {
+    const response = await axios.get(apiUrl);
+    const item = response.data.item || response.data;
     res.render('items/edit', {
       title: 'Editar Item - CampuSwap',
       error: null,
       success: null,
       item: item
     });
-  });
+  } catch (err) {
+    console.error('Error fetching item:', err.message);
+    return res.status(404).render('error', {
+      title: 'Item no encontrado',
+      message: 'El item que intentas editar no existe o no está disponible.',
+      error: { status: 404 }
+    });
+  }
 };
 
 // POST edit item
-const editItemPost = (req, res, next) => {
+const editItemPost = async (req, res, next) => {
   const itemId = req.params.id;
   const { title, description, price, category, condition, images, whatsapp, isAvailable } = req.body;
 
@@ -330,10 +327,8 @@ const editItemPost = (req, res, next) => {
 
   // Call REST API to update
   const apiUrl = `${req.protocol}://${req.get('host')}/api/items/${itemId}`;
-  request.put({
-    url: apiUrl,
-    json: true,
-    body: {
+  try {
+    const response = await axios.put(apiUrl, {
       title: title.trim(),
       description: description.trim(),
       price: parseFloat(price),
@@ -342,33 +337,24 @@ const editItemPost = (req, res, next) => {
       images: imageArray,
       whatsapp,
       isAvailable: isAvailable === 'true' || isAvailable === true
-    }
-  }, (err, apiRes, body) => {
-    if (err) {
-      return res.render('items/edit', {
-        title: 'Editar Item - CampuSwap',
-        error: 'Error de red o del servidor. Intenta de nuevo.',
-        success: null,
-        item: { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
-      });
-    }
-    if (!apiRes || apiRes.statusCode >= 400) {
-      return res.render('items/edit', {
-        title: 'Editar Item - CampuSwap',
-        error: (body && body.message) || 'Error al actualizar el item.',
-        success: null,
-        item: { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
-      });
-    }
-
+    });
     // Success
     return res.render('items/edit', {
       title: 'Editar Item - CampuSwap',
       error: null,
       success: 'Item actualizado exitosamente!',
-      item: body.item || { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
+      item: response.data.item || { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
     });
-  });
+  } catch (err) {
+    console.error('Error updating item:', err.message);
+    const errorMessage = err.response?.data?.message || 'Error de red o del servidor. Intenta de nuevo.';
+    return res.render('items/edit', {
+      title: 'Editar Item - CampuSwap',
+      error: errorMessage,
+      success: null,
+      item: { _id: itemId, title, description, price, category, condition, images, whatsapp, isAvailable }
+    });
+  }
 };
 
 module.exports.editItemGet = editItemGet;
