@@ -1,0 +1,57 @@
+extends ../layout
+
+block content
+  .container.my-4
+    if !item
+      .alert.alert-danger No se encontró el producto.
+    else
+      .row.g-4
+        .col-md-6
+          if item.images && item.images.length
+            // Carousel
+            #itemCarousel.carousel.slide(data-bs-ride="carousel")
+              .carousel-indicators
+                each img, idx in item.images
+                  button(type="button", data-bs-target="#itemCarousel", data-bs-slide-to=idx, class=idx===0 ? 'active' : '', aria-current=idx===0 ? 'true' : 'false', aria-label=`Slide ${idx+1}`)
+              .carousel-inner
+                each img, idx in item.images
+                  .carousel-item(class=idx===0 ? 'active' : '')
+                    img.d-block.w-100(src=img, alt=`${item.title} ${idx+1}`)
+              button.carousel-control-prev(type="button", data-bs-target="#itemCarousel", data-bs-slide="prev")
+                span.carousel-control-prev-icon(aria-hidden="true")
+                span.visually-hidden Previous
+              button.carousel-control-next(type="button", data-bs-target="#itemCarousel", data-bs-slide="next")
+                span.carousel-control-next-icon(aria-hidden="true")
+                span.visually-hidden Next
+          else
+            img.img-fluid.rounded(src='https://picsum.photos/800/500?grayscale', alt='placeholder')
+        .col-md-6
+          h2.fw-bold.mb-2= item.title
+          .text-muted.mb-3
+            span.me-3
+              i.bi.bi-tag
+              |  #{item.category}
+            span
+              i.bi.bi-star
+              |  #{item.condition}
+          h3.text-primary.fw-bold.mb-3 $#{item.price}
+          if item.description
+            p.mb-4= item.description
+          .d-flex.flex-wrap.gap-2
+            if item.whatsapp
+              a.btn.btn-success(href=`https://wa.me/${item.whatsapp}?text=Hola!%20Estoy%20interesado%20en%20tu%20${encodeURIComponent(item.title)}`, target="_blank")
+                i.bi.bi-whatsapp.me-2
+                | Contactar por WhatsApp
+            a.btn.btn-outline-primary(href='/items')
+              i.bi.bi-arrow-left.me-2
+              | Volver a la lista
+          if item.isAvailable === false
+            .mt-3.alert.alert-secondary(role='alert')
+              i.bi.bi-info-circle.me-2
+              | Este producto está marcado como no disponible.
+
+      // Metadata
+      .mt-4.text-muted.small
+        span.me-3 ID: #{item.itemId || item._id}
+        if item.created
+          span Publicado: #{new Date(item.created).toLocaleDateString()}

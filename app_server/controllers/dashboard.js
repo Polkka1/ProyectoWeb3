@@ -65,7 +65,7 @@ const myItems = (req, res, next) => {
     title: 'Mis Items - CampuSwap',
     items: userItems,
     stats: stats,
-    userName: "Demo User" // In real app, get from session
+    userName: (req.session && req.session.user && req.session.user.name) || 'Usuario'
   });
 };
 
@@ -111,7 +111,7 @@ const myFavorites = (req, res, next) => {
   res.render('dashboard/favorites', { 
     title: 'Mis Favoritos - CampuSwap',
     favorites: favoriteItems,
-    userName: "Demo User"
+    userName: (req.session && req.session.user && req.session.user.name) || 'Usuario'
   });
 };
 

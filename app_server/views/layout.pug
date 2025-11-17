@@ -25,16 +25,25 @@ html
               a.nav-link(href="/items/new") Publicar
           
           ul.navbar-nav
-            li.nav-item
-              a.nav-link(href="/me/items") Mis Items
-            li.nav-item
-              a.nav-link(href="/me/favorites") 
-                i.bi.bi-heart
-                | Favoritos
-            li.nav-item
-              a.nav-link(href="/auth/login") Iniciar Sesión
-            li.nav-item
-              a.btn.btn-outline-primary.ms-2(href="/auth/register") Registrarse
+            if currentUser
+              li.nav-item
+                a.nav-link(href="/me/items") Mis Items
+              li.nav-item
+                a.nav-link(href="/me/favorites") 
+                  i.bi.bi-heart
+                  | Favoritos
+              li.nav-item.dropdown
+                a#userDropdown.nav-link.dropdown-toggle(href="#", role="button", data-bs-toggle="dropdown", aria-expanded="false")
+                  i.bi.bi-person-circle.me-1
+                  | #{currentUser.name}
+                ul.dropdown-menu.dropdown-menu-end(aria-labelledby="userDropdown")
+                  li
+                    a.dropdown-item(href="/auth/logout") Cerrar sesión
+            else
+              li.nav-item
+                a.nav-link(href="/auth/login") Iniciar Sesión
+              li.nav-item
+                a.btn.btn-outline-primary.ms-2(href="/auth/register") Registrarse
 
     main.container-fluid.px-0
       block content

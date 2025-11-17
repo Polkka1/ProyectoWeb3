@@ -6,11 +6,14 @@ const reviews = mongoose.model('review');
 //Create new review
 const reviewsCreate = async (req, res) => {
     try {
-        const { itemId, reviewerId, reviewerName, sellerId, rating, title, comment, purchaseVerified } = req.body;
+        const { itemId, sellerId, rating, title, comment, purchaseVerified } = req.body;
+        const sessionUser = req.session && req.session.user;
+        if (!sessionUser || typeof sessionUser.userid !== 'number') {
+            return res.status(401).json({ status: 'error', message: 'Debes iniciar sesión para crear una reseña.' });
+        }
         const errors = [];
         if (!itemId) errors.push('itemId requerido');
-        if (!reviewerId) errors.push('reviewerId requerido');
-        if (!reviewerName || reviewerName.trim().length < 2) errors.push('Nombre del revisor requerido');
+        // reviewer is the logged in user
         if (!sellerId) errors.push('sellerId requerido');
         if (!rating || rating < 1 || rating > 5) errors.push('Rating debe estar entre 1 y 5');
         if (!title || title.trim().length < 2) errors.push('Título requerido');
@@ -28,8 +31,8 @@ const reviewsCreate = async (req, res) => {
         const newReview = new Review({
             reviewId: nextReviewId,
             itemId,
-            reviewerId,
-            reviewerName: reviewerName.trim(),
+            reviewerId: sessionUser.userid,
+            reviewerName: sessionUser.name,
             sellerId,
             rating,
             title: title.trim(),

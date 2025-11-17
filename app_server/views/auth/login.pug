@@ -24,6 +24,8 @@ block content
 
             // Login Form
             form(method="POST", action="/auth/login")
+              if nextUrl
+                input(type="hidden", name="nextUrl", value=nextUrl)
               .mb-3
                 label.form-label(for="email") Email Institucional
                 .input-group

@@ -7,7 +7,12 @@ const items = mongoose.model('item');
 const itemsCreate = async (req, res) => {
     console.log('itemsCreate called. req.body:', req.body);
     try {
-        const { title, description, price, category, condition, images, whatsapp, sellerId, sellerName, location } = req.body;
+        const { title, description, price, category, condition, images, whatsapp, location } = req.body;
+        // Require authenticated user and link item to creator
+        const sessionUser = req.session && req.session.user;
+        if (!sessionUser || typeof sessionUser.userid !== 'number') {
+            return res.status(401).json({ status: 'error', message: 'Debes iniciar sesión para publicar un item.' });
+        }
         const errors = [];
         if (!title || String(title).trim().length < 3) errors.push('El título debe tener al menos 3 caracteres');
         if (!description || String(description).trim().length < 10) errors.push('La descripción debe tener al menos 10 caracteres');
@@ -44,8 +49,8 @@ const itemsCreate = async (req, res) => {
             condition,
             images: imageArray,
             whatsapp,
-            sellerId,
-            sellerName,
+            sellerId: sessionUser.userid,
+            sellerName: sessionUser.name,
             location,
             itemId: nextItemId
         });

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const users = mongoose.model('user');
 
 // POST /api/auth/login
@@ -17,8 +18,14 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({ status: 'error', message: 'Credenciales inválidas.' });
     }
-    // NOTE: For class project only; in production, hash and compare securely
-    if (user.password !== password) {
+    // Support hashed and legacy plaintext passwords
+    let valid = false;
+    if (user.password && String(user.password).startsWith('$2')) {
+      valid = await bcrypt.compare(password, user.password);
+    } else {
+      valid = user.password === password;
+    }
+    if (!valid) {
       return res.status(401).json({ status: 'error', message: 'Credenciales inválidas.' });
     }
 
@@ -52,11 +59,15 @@ const register = async (req, res) => {
     let maxUser = await users.findOne({}, {}, { sort: { userid: -1 } });
     let nextUserId = maxUser ? maxUser.userid + 1 : 100000;
 
+    // hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(password, salt);
+
     const newUser = new users({
       name,
       lastname,
       email: emailLower,
-      password, // NOTE: plaintext for class project; hash in production
+      password: hashed,
       userid: nextUserId
     });
     await newUser.save();

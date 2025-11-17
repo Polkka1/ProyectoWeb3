@@ -2,17 +2,18 @@ const express = require('express');
 const router = express.Router();
 
 const ctrlDashboard = require('../controllers/dashboard');
+const { ensureAuth } = require('../middleware/auth');
 
 /* GET my items dashboard */
-router.get('/items', ctrlDashboard.myItems);
+router.get('/items', ensureAuth, ctrlDashboard.myItems);
 
 /* GET my favorites */
-router.get('/favorites', ctrlDashboard.myFavorites);
+router.get('/favorites', ensureAuth, ctrlDashboard.myFavorites);
 
 /* POST delete item */
-router.post('/items/:id/delete', ctrlDashboard.deleteItem);
+router.post('/items/:id/delete', ensureAuth, ctrlDashboard.deleteItem);
 
 /* POST toggle item status */
-router.post('/items/:id/status', ctrlDashboard.toggleItemStatus);
+router.post('/items/:id/status', ensureAuth, ctrlDashboard.toggleItemStatus);
 
 module.exports = router;

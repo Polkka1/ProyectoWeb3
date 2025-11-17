@@ -2,21 +2,22 @@ const express = require('express');
 const router = express.Router();
 
 const ctrlItems = require('../controllers/items');
+const { ensureAuth } = require('../middleware/auth');
 
 /* GET items list */
 router.get('/', ctrlItems.itemsListPage);
 
 /* GET new item form */
-router.get('/new', ctrlItems.newItemGet);
+router.get('/new', ensureAuth, ctrlItems.newItemGet);
 
 /* POST new item */
-router.post('/new', ctrlItems.newItemPost);
+router.post('/new', ensureAuth, ctrlItems.newItemPost);
 
 /* GET edit item form */
-router.get('/edit/:id', ctrlItems.editItemGet);
+router.get('/edit/:id', ensureAuth, ctrlItems.editItemGet);
 
 /* POST edit item */
-router.post('/edit/:id', ctrlItems.editItemPost);
+router.post('/edit/:id', ensureAuth, ctrlItems.editItemPost);
 
 /* GET item publish success confirmation */
 router.get('/success', (req, res) => {
