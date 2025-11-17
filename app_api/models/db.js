@@ -18,14 +18,10 @@ if (process.platform === 'win32') {
 
 // define database connection string and target DB name
 const DB_NAME = 'campuswapdb';
-// Use base URI without a path; db name is enforced via options
-let dbURI = 'mongodb://localhost:27017';
-if (process.env.NODE_ENV === 'production') {
-    dbURI = process.env.MONGODB_URI;
-    if (!dbURI) {
-      console.error('Missing MONGODB_URI environment variable in production.');
-      process.exit(1);
-    }
+// Prefer explicit MONGODB_URI if provided (works in dev and prod); fallback to localhost
+let dbURI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+if (!process.env.MONGODB_URI) {
+  console.warn('[db] Using local MongoDB (set MONGODB_URI to use Atlas).');
 }
 
 // connect to database

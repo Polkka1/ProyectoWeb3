@@ -7,7 +7,7 @@ const items = mongoose.model('item');
 const itemsCreate = async (req, res) => {
     console.log('itemsCreate called. req.body:', req.body);
     try {
-        const { title, description, price, category, condition, images, whatsapp, location } = req.body;
+        const { title, description, price, category, condition, images, whatsapp, location, quantity } = req.body;
         // Require authenticated user and link item to creator
         const sessionUser = req.session && req.session.user;
         if (!sessionUser || typeof sessionUser.userid !== 'number') {
@@ -20,6 +20,14 @@ const itemsCreate = async (req, res) => {
         if (Number.isNaN(priceNum) || priceNum <= 0) errors.push('El precio debe ser un número mayor a 0');
         if (!category) errors.push('Selecciona una categoría');
         if (!condition) errors.push('Selecciona la condición del producto');
+
+        // quantity → ensure integer >= 1 (default 1)
+        let qty = 1;
+        if (quantity !== undefined) {
+            const q = Number(quantity);
+            if (!Number.isInteger(q) || q < 1) errors.push('La cantidad debe ser un entero mayor o igual a 1');
+            else qty = q;
+        }
 
         // images → ensure array of non-empty strings
         let imageArray = [];
@@ -45,6 +53,7 @@ const itemsCreate = async (req, res) => {
             title: String(title).trim(),
             description: String(description).trim(),
             price: priceNum,
+            quantity: qty,
             category,
             condition,
             images: imageArray,
@@ -131,7 +140,7 @@ const itemsUpdateOne = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Item ID requerido.' });
         }
 
-        const { title, description, price, category, condition, images, whatsapp, location, isAvailable } = req.body;
+        const { title, description, price, category, condition, images, whatsapp, location, isAvailable, quantity } = req.body;
         const updateFields = {};
         const errors = [];
 
@@ -154,6 +163,11 @@ const itemsUpdateOne = async (req, res) => {
         if (whatsapp !== undefined) updateFields.whatsapp = whatsapp;
         if (location !== undefined) updateFields.location = location;
         if (isAvailable !== undefined) updateFields.isAvailable = Boolean(isAvailable);
+        if (quantity !== undefined) {
+            const q = Number(quantity);
+            if (!Number.isInteger(q) || q < 1) errors.push('La cantidad debe ser un entero mayor o igual a 1');
+            else updateFields.quantity = q;
+        }
 
         // Handle images
         if (images !== undefined) {

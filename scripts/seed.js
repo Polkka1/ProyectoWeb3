@@ -5,6 +5,7 @@
     - Atlas:   MONGODB_URI="<your_atlas_srv>" node scripts/seed.js
 */
 
+require('dotenv').config();
 const mongoose = require('mongoose');
 
 const DB_NAME = 'campuswapdb';

@@ -92,6 +92,24 @@ block content
                       required
                     )
 
+                // Quantity
+                .col-md-6.mb-3
+                  label.form-label(for="quantity")
+                    i.bi.bi-123.me-1
+                    | Cantidad *
+                  select.form-select(id="quantity", name="quantity", required)
+                    - const qVal = parseInt(formData.quantity || '1', 10);
+                    option(value="1", selected=qVal===1) 1
+                    option(value="2", selected=qVal===2) 2
+                    option(value="3", selected=qVal===3) 3
+                    option(value="4", selected=qVal===4) 4
+                    option(value="5", selected=qVal===5) 5
+                    option(value="6", selected=qVal===6) 6
+                    option(value="7", selected=qVal===7) 7
+                    option(value="8", selected=qVal===8) 8
+                    option(value="9", selected=qVal===9) 9
+                    option(value="10", selected=qVal===10) 10
+
                 // WhatsApp
                 .col-md-6.mb-3
                   label.form-label(for="whatsapp")
@@ -248,6 +266,7 @@ block content
           const category = form.querySelector('#category')?.value;
           const condition = form.querySelector('#condition')?.value;
           const whatsapp = form.querySelector('#whatsapp')?.value;
+          const quantity = parseInt(form.querySelector('#quantity')?.value || '1', 10);
           const imageInputs = form.querySelectorAll('input[name="images"]');
           const images = Array.from(imageInputs)
             .map(i => i.value.trim())
@@ -261,6 +280,7 @@ block content
           if (!category) errs.push('Selecciona una categoría');
           if (!condition) errs.push('Selecciona la condición del producto');
           if (images.length === 0) errs.push('Agrega al menos una imagen (URL)');
+          if (!Number.isInteger(quantity) || quantity < 1) errs.push('La cantidad debe ser un entero mayor o igual a 1');
           if (!whatsapp || !/^\d{9}$/.test(whatsapp)) errs.push('Ingresa un WhatsApp válido (9 dígitos)');
 
           if (errs.length) {
@@ -275,7 +295,7 @@ block content
             const res = await fetch('/api/items', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title, description, price, category, condition, images, whatsapp })
+              body: JSON.stringify({ title, description, price, category, condition, images, whatsapp, quantity })
             });
 
             if (res.ok) {

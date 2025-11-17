@@ -5,6 +5,7 @@ const itemsSchema = new mongoose.Schema({
     description: { type: String, required: true },
     itemId: { type: Number, required: true, unique: true },
     price: { type: Number, required: true, min: 0 },
+  quantity: { type: Number, min: 1, default: 1 },
     category: { 
         type: String, 
         enum: ['Libros', 'Tecnología', 'Arte', 'Hogar', 'Otros'],

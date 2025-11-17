@@ -70,7 +70,7 @@ const newItemGet = (req, res, next) => {
 
 // POST new item
 const newItemPost = async (req, res, next) => {
-  const { title, description, price, category, condition, images, whatsapp } = req.body;
+  const { title, description, price, category, condition, images, whatsapp, quantity } = req.body;
 
   // Basic validation (client-friendly)
   const errors = [];
@@ -87,6 +87,8 @@ const newItemPost = async (req, res, next) => {
     else imageArray = [images.trim()].filter(img => img !== '');
   }
   if (imageArray.length === 0) errors.push('Agrega al menos una imagen (URL)');
+  const qty = parseInt(quantity || '1', 10);
+  if (!Number.isInteger(qty) || qty < 1) errors.push('La cantidad debe ser un entero mayor o igual a 1');
 
   if (errors.length > 0) {
     return res.render('items/new', {
@@ -104,6 +106,7 @@ const newItemPost = async (req, res, next) => {
       title: title.trim(),
       description: description.trim(),
       price: parseFloat(price),
+      quantity: qty,
       category,
       condition,
       images: imageArray,
@@ -118,7 +121,7 @@ const newItemPost = async (req, res, next) => {
       title: 'Publicar Nuevo Item - CampuSwap',
       error: errorMessage,
       success: null,
-      formData: { title, description, price, category, condition, images, whatsapp }
+      formData: { title, description, price, category, condition, images, whatsapp, quantity }
     });
   }
 };
