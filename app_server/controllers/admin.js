@@ -20,7 +20,11 @@ const adminDashboard = async (req, res) => {
       items = Array.isArray(itemsData) ? itemsData : (itemsData.items || []);
     }
     
-    const users = usersRes.status === 'fulfilled' && Array.isArray(usersRes.value.data) ? usersRes.value.data : [];
+    let users = [];
+    if (usersRes.status === 'fulfilled') {
+      const uData = usersRes.value.data;
+      users = Array.isArray(uData) ? uData : (uData.users || []);
+    }
     const reviews = reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value.data) ? reviewsRes.value.data : [];
     const categories = categoriesRes.status === 'fulfilled' && Array.isArray(categoriesRes.value.data) ? categoriesRes.value.data : [];
 
