@@ -12,7 +12,13 @@ const myItems = async (req, res, next) => {
   const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
   try {
     const response = await axios.get(apiUrl);
-    const allItems = Array.isArray(response.data) ? response.data : [];
+    // Items API now returns either an array (legacy) or an object { status, total, count, items }
+    let allItems = [];
+    if (Array.isArray(response.data)) {
+      allItems = response.data;
+    } else if (response.data && Array.isArray(response.data.items)) {
+      allItems = response.data.items;
+    }
     
     // Filter items by logged-in user's sellerId
     const userItems = allItems.filter(item => item.sellerId === userId);
@@ -60,7 +66,13 @@ const myFavorites = async (req, res, next) => {
     ]);
     
     let watchlistItems = Array.isArray(watchlistRes.data) ? watchlistRes.data : [];
-    const allItems = Array.isArray(itemsRes.data) ? itemsRes.data : [];
+    // Adapt items response shape (array or object with .items)
+    let allItems = [];
+    if (Array.isArray(itemsRes.data)) {
+      allItems = itemsRes.data;
+    } else if (itemsRes.data && Array.isArray(itemsRes.data.items)) {
+      allItems = itemsRes.data.items;
+    }
     
     // Filter by current user
     watchlistItems = watchlistItems.filter(w => w.userId === userId);
