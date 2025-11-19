@@ -66,15 +66,14 @@ block content
       .row#items-container
         each item in items
           .col-md-6.col-lg-4.mb-4.item-card(data-status=item.status)
-            .card.h-100.border-0.shadow-sm
+            .card.h-100.shadow-sm
               .position-relative
-                img.card-img-top(src=item.image, alt=item.title, style="height: 200px; object-fit: cover;")
-                .position-absolute.top-0.end-0.m-2
-                  if item.status === 'active'
-                    span.badge.bg-success Activo
-                  else if item.status === 'sold'
-                    span.badge.bg-secondary Vendido
-
+                a(href=`/items/${item._id}`)
+                  img.card-img-top(src=item.images && item.images.length > 0 ? item.images[0] : '/images/placeholder.jpg', alt=item.title, style="height: 200px; object-fit: cover;")
+                if item.isAvailable !== false
+                  span.badge.bg-success.position-absolute.top-0.end-0.m-2 Disponible
+                else
+                  span.badge.bg-secondary.position-absolute.top-0.end-0.m-2 Vendido
               .card-body.d-flex.flex-column
                 h6.card-title.fw-bold= item.title
                 p.card-text.text-muted.small.flex-grow-1= item.description.substring(0, 100) + '...'
@@ -95,17 +94,17 @@ block content
                 // Action Buttons
                 .d-grid.gap-2.mt-auto
                   .btn-group
-                    a.btn.btn-outline-primary.btn-sm(href=`/items/${item.id}`) Ver
-                    button.btn.btn-outline-secondary.btn-sm(onclick=`editItem(${item.id})`) Editar
+                    a.btn.btn-outline-primary.btn-sm(href=`/items/${item._id}`) Ver
+                    a.btn.btn-outline-secondary.btn-sm(href=`/items/edit/${item._id}`) Editar
                   
-                  if item.status === 'active'
+                  if item.isAvailable !== false
                     .btn-group
-                      button.btn.btn-warning.btn-sm(onclick=`markAsSold(${item.id})`) Marcar Vendido
-                      button.btn.btn-outline-danger.btn-sm(onclick=`confirmDelete(${item.id}, '${item.title}')`) Eliminar
+                      button.btn.btn-warning.btn-sm(onclick=`markAsSold('${item._id}')`) Marcar Vendido
+                      button.btn.btn-outline-danger.btn-sm(onclick=`confirmDelete('${item._id}', '${item.title}')`) Eliminar
                   else
                     .btn-group
-                      button.btn.btn-success.btn-sm(onclick=`markAsActive(${item.id})`) Reactivar
-                      button.btn.btn-outline-danger.btn-sm(onclick=`confirmDelete(${item.id}, '${item.title}')`) Eliminar
+                      button.btn.btn-success.btn-sm(onclick=`markAsActive('${item._id}')`) Reactivar
+                      button.btn.btn-outline-danger.btn-sm(onclick=`confirmDelete('${item._id}', '${item.title}')`) Eliminar
     else
       .row
         .col-12.text-center.py-5
@@ -159,6 +158,7 @@ block content
     }
 
     function markAsSold(itemId) {
+      if (!itemId) return;
       // Create form and submit
       const form = document.createElement('form');
       form.method = 'POST';
@@ -175,6 +175,7 @@ block content
     }
 
     function markAsActive(itemId) {
+      if (!itemId) return;
       // Create form and submit
       const form = document.createElement('form');
       form.method = 'POST';

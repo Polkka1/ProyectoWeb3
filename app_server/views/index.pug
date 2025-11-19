@@ -9,44 +9,66 @@ block content
           h1.display-5.fw-bold Encuentra lo que necesitas en USFQ
           p.lead Compra y vende libros, tecnología y más entre estudiantes
 
-    // Search Section
+    // Search & Filters
     .row.mb-4
       .col-12
-        .card.shadow-sm
+        .card.shadow-sm.border-0
           .card-body
-            form.row.g-3
-              .col-md-6
+            form.row.g-3(method="get" action="/")
+              .col-md-4
+                label.form-label.mb-1 Busqueda
                 .input-group
                   span.input-group-text
                     i.bi.bi-search
-                  input.form-control(type="text", placeholder="Buscar libros, calculadoras, tablets...")
+                  input.form-control(type="text", name="q", value=search && search.q, placeholder="Buscar título o descripción...")
               .col-md-2
-                select.form-select
-                  option(selected) Categoría
-                  option(value="Libros") Libros
-                  option(value="Tecnología") Tecnología
-                  option(value="Arte") Arte
-                  option(value="Hogar") Hogar
-                  option(value="Otros") Otros
+                label.form-label.mb-1 Categoría
+                select.form-select(name="category")
+                  option(value="") Todas
+                  each c in ['Libros','Tecnología','Arte','Hogar','Otros']
+                    option(value=c selected=search && search.category===c)= c
               .col-md-2
-                select.form-select
-                  option(selected) Condición
-                  option(value="Nuevo") Nuevo
-                  option(value="Como nuevo") Como nuevo
-                  option(value="Usado") Usado
+                label.form-label.mb-1 Condición
+                select.form-select(name="condition")
+                  option(value="") Todas
+                  each cond in ['Nuevo','Como nuevo','Usado']
+                    option(value=cond selected=search && search.condition===cond)= cond
               .col-md-2
-                button.btn.btn-primary.w-100(type="submit") Buscar
+                label.form-label.mb-1 Precio Mín
+                input.form-control(type="number", min="0", name="minPrice", value=search && search.minPrice)
+              .col-md-2
+                label.form-label.mb-1 Precio Máx
+                input.form-control(type="number", min="0", name="maxPrice", value=search && search.maxPrice)
+              .col-12.text-end
+                button.btn.btn-primary.me-2(type="submit") Aplicar filtros
+                a.btn.btn-outline-secondary(href="/") Limpiar
+            if meta
+              .mt-3.small.text-muted
+                | Mostrando #{meta.count} de #{meta.total} resultados
 
     // Filters and Stats
     .row.mb-3
       .col-md-8
-        .d-flex.gap-2.flex-wrap
-          span.badge.bg-secondary Rango de precio:
-          button.btn.btn-outline-secondary.btn-sm $0-$50
-          button.btn.btn-outline-secondary.btn-sm $50-$100
-          button.btn.btn-outline-secondary.btn-sm $100+
+        if search && (search.q || search.category || search.condition || search.minPrice || search.maxPrice)
+          .d-flex.gap-2.flex-wrap.align-items-center
+            span.badge.bg-info Filtros activos:
+            if search.q
+              span.badge.bg-light.text-dark Búsqueda: #{search.q}
+            if search.category
+              span.badge.bg-light.text-dark Cat: #{search.category}
+            if search.condition
+              span.badge.bg-light.text-dark Cond: #{search.condition}
+            if search.minPrice
+              span.badge.bg-light.text-dark ≥ $#{search.minPrice}
+            if search.maxPrice
+              span.badge.bg-light.text-dark ≤ $#{search.maxPrice}
+        else
+          small.text-muted Sin filtros aplicados
       .col-md-4.text-md-end
-        small.text-muted #{items.length} productos encontrados
+        if meta
+          small.text-muted #{meta.total} productos totales
+        else
+          small.text-muted #{items.length} productos encontrados
 
     // Items Grid
     .row
@@ -54,9 +76,9 @@ block content
         .col-md-4.col-lg-3.mb-4
           .card.h-100.shadow-sm.border-0
             .position-relative
-              img.card-img-top(src=item.image, alt=item.title, style="height: 200px; object-fit: cover;")
+              img.card-img-top(src=item.images && item.images.length > 0 ? item.images[0] : '/images/placeholder.jpg', alt=item.title, style="height: 200px; object-fit: cover;")
               .position-absolute.top-0.end-0.m-2
-                button.btn.btn-light.btn-sm.rounded-circle
+                button.btn.btn-light.btn-sm.rounded-circle(onclick=`addToFavorites(${item.itemId}, '${item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${item.price}, ${item.sellerId}, '${item.sellerName ? item.sellerName.replace(/'/g, "\\'").replace(/"/g, '&quot;') : 'Vendedor'}')`, title="Agregar a favoritos")
                   i.bi.bi-heart
               if item.condition
                 .position-absolute.bottom-0.start-0.m-2
@@ -70,7 +92,7 @@ block content
                 small.text-muted= item.category
               
               .d-grid.gap-2.mt-3
-                a.btn.btn-outline-primary.btn-sm(href=`/items/${item.id}`) Ver detalles
+                a.btn.btn-outline-primary.btn-sm(href=`/items/${item._id}`) Ver detalles
                 button.btn.btn-success.btn-sm
                   i.bi.bi-whatsapp.me-1
                   | Contactar
@@ -110,3 +132,43 @@ block content
               .card-body.py-3
                 i.bi.bi-three-dots.fs-1.text-primary
                 p.mt-2.mb-0 Otros
+
+  // JavaScript for favorites
+  script.
+    async function addToFavorites(itemId, itemTitle, itemPrice, sellerId, sellerName) {
+      if (!itemId) {
+        alert('Error: Item no válido');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itemId: itemId,
+            itemTitle: itemTitle,
+            itemPrice: itemPrice,
+            sellerId: sellerId,
+            sellerName: sellerName
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          alert('✓ Agregado a favoritos');
+        } else if (response.status === 401) {
+          if (confirm('Debes iniciar sesión para guardar favoritos. ¿Ir a login?')) {
+            window.location.href = '/auth/login?returnTo=' + encodeURIComponent(window.location.pathname);
+          }
+        } else if (response.status === 409) {
+          alert('Este item ya está en tus favoritos');
+        } else {
+          alert('Error: ' + (data.message || 'No se pudo agregar a favoritos'));
+        }
+      } catch (err) {
+        console.error('Error adding to favorites:', err);
+        alert('Error de red. Intenta de nuevo.');
+      }
+    }

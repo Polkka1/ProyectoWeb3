@@ -2,27 +2,36 @@ const axios = require('axios');
 
 // GET public items list page
 const itemsListPage = async (req, res) => {
-  const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
+  // Support filters on /items list page
+  const { q, category, condition, minPrice, maxPrice } = req.query;
+  const params = new URLSearchParams();
+  params.set('limit', '24');
+  params.set('sort', '-created');
+  if (q) params.set('q', q);
+  if (category) params.set('category', category);
+  if (condition) params.set('condition', condition);
+  if (minPrice) params.set('minPrice', minPrice);
+  if (maxPrice) params.set('maxPrice', maxPrice);
+
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items?${params.toString()}`;
   try {
     const response = await axios.get(apiUrl);
-    if (Array.isArray(response.data)) {
-      return res.render('items/index', {
-        title: 'Items - CampuSwap',
-        error: null,
-        items: response.data
-      });
-    }
-    res.render('items/index', {
+    const itemsData = Array.isArray(response.data) ? response.data : response.data.items || [];
+    const meta = response.data && response.data.status === 'success' ? response.data : null;
+    return res.render('items/index', {
       title: 'Items - CampuSwap',
-      error: 'No se pudieron cargar los items.',
-      items: []
+      error: null,
+      items: itemsData,
+      search: { q, category, condition, minPrice, maxPrice },
+      meta
     });
   } catch (err) {
     console.error('Error fetching items:', err.message);
     res.render('items/index', {
       title: 'Items - CampuSwap',
       error: 'No se pudieron cargar los items.',
-      items: []
+      items: [],
+      search: { q, category, condition, minPrice, maxPrice }
     });
   }
 };

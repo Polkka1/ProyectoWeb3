@@ -16,4 +16,7 @@ router.post('/items/:id/delete', ensureAuth, ctrlDashboard.deleteItem);
 /* POST toggle item status */
 router.post('/items/:id/status', ensureAuth, ctrlDashboard.toggleItemStatus);
 
+/* POST remove from favorites */
+router.post('/favorites/:watchlistId/remove', ensureAuth, ctrlDashboard.removeFavorite);
+
 module.exports = router;

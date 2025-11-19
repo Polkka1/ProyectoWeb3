@@ -90,22 +90,64 @@ const itemsCreate = async (req, res) => {
     }
 }
 
-//Items list
+// Items list with search & filters
 const itemsList = async (req, res) => {
     try {
-        // Optional query params for future pagination/filtering
-        const limit = parseInt(req.query.limit) || 0; // 0 = no limit
-        const skip = parseInt(req.query.skip) || 0;
-        const sort = req.query.sort || '-created'; // default: newest first
+        const {
+            q, // free text across title/description
+            category,
+            condition,
+            minPrice,
+            maxPrice,
+            limit: limitRaw,
+            skip: skipRaw,
+            sort: sortRaw
+        } = req.query;
 
-        const itemsResult = await items
-            .find({})
-            .sort(sort)
-            .limit(limit)
-            .skip(skip)
-            .lean();
+        const limit = Number.parseInt(limitRaw) || 0; // 0 = no limit
+        const skip = Number.parseInt(skipRaw) || 0;
+        const sort = sortRaw || '-created';
 
-        return res.status(200).json(itemsResult);
+        const filter = {};
+
+        // Text search (basic, case-insensitive regex). Guard length to avoid ReDoS.
+        if (q && typeof q === 'string') {
+            const trimmed = q.trim().slice(0, 100); // cap length
+            if (trimmed.length > 0) {
+                const regex = new RegExp(trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                filter.$or = [
+                    { title: regex },
+                    { description: regex }
+                ];
+            }
+        }
+
+        if (category) filter.category = category;
+        if (condition) filter.condition = condition;
+
+        // Price range
+        if (minPrice || maxPrice) {
+            filter.price = {};
+            if (minPrice && !Number.isNaN(Number(minPrice))) filter.price.$gte = Number(minPrice);
+            if (maxPrice && !Number.isNaN(Number(maxPrice))) filter.price.$lte = Number(maxPrice);
+            // Remove empty price object if invalid inputs
+            if (Object.keys(filter.price).length === 0) delete filter.price;
+        }
+
+        const query = items.find(filter).sort(sort).skip(skip);
+        if (limit > 0) query.limit(limit);
+
+        const [results, total] = await Promise.all([
+            query.lean(),
+            items.countDocuments(filter)
+        ]);
+
+        return res.status(200).json({
+            status: 'success',
+            total,
+            count: results.length,
+            items: results
+        });
     } catch (err) {
         return res.status(500).json({
             status: 'error',

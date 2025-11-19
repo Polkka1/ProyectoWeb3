@@ -13,7 +13,13 @@ const adminDashboard = async (req, res) => {
       axios.get(`${apiUrl}/categories`)
     ]);
 
-    const items = itemsRes.status === 'fulfilled' && Array.isArray(itemsRes.value.data) ? itemsRes.value.data : [];
+    // Handle items response (can be array or object with items property)
+    let items = [];
+    if (itemsRes.status === 'fulfilled') {
+      const itemsData = itemsRes.value.data;
+      items = Array.isArray(itemsData) ? itemsData : (itemsData.items || []);
+    }
+    
     const users = usersRes.status === 'fulfilled' && Array.isArray(usersRes.value.data) ? usersRes.value.data : [];
     const reviews = reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value.data) ? reviewsRes.value.data : [];
     const categories = categoriesRes.status === 'fulfilled' && Array.isArray(categoriesRes.value.data) ? categoriesRes.value.data : [];

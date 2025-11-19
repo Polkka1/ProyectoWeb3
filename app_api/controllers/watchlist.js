@@ -47,39 +47,70 @@ const watchlistCreate = async (req, res) => {
 }
 
 //Watchlist items list
-const watchlistList = (req, res) => {
-    res
-    .status(200)
-    .json({
-        "status": "success watchlistList",
-    })
+const watchlistList = async (req, res) => {
+    try {
+        const watchlistItems = await watchlist.find({}).lean();
+        return res.status(200).json(watchlistItems);
+    } catch (err) {
+        return res.status(500).json({ status: 'error', message: 'Error al listar favoritos.', error: err.message });
+    }
 }
 
 //Read one watchlist item
-const watchlistReadOne = (req, res) => {
-    watchlist
-        .findById(req.params.watchlistId)
-        .exec((err, watchlistObject) => {
-            console.log("findById success");
-        });
+const watchlistReadOne = async (req, res) => {
+    try {
+        const watchlistItem = await watchlist.findById(req.params.watchlistId);
+        if (!watchlistItem) {
+            return res.status(404).json({ status: 'error', message: 'Item de favoritos no encontrado.' });
+        }
+        return res.status(200).json(watchlistItem);
+    } catch (err) {
+        return res.status(500).json({ status: 'error', message: 'Error al leer favorito.', error: err.message });
+    }
 }
 
 //Update watchlist item
-const watchlistUpdateOne = (req, res) => {
-    res
-    .status(200)
-    .json({
-        "status": "success watchlistUpdateOne",
-    })
+const watchlistUpdateOne = async (req, res) => {
+    try {
+        const { priceAlert, alertPrice, notes } = req.body;
+        const watchlistItem = await watchlist.findById(req.params.watchlistId);
+        
+        if (!watchlistItem) {
+            return res.status(404).json({ status: 'error', message: 'Item de favoritos no encontrado.' });
+        }
+        
+        // Update allowed fields
+        if (priceAlert !== undefined) watchlistItem.priceAlert = !!priceAlert;
+        if (alertPrice !== undefined) watchlistItem.alertPrice = alertPrice;
+        if (notes !== undefined) watchlistItem.notes = notes;
+        
+        await watchlistItem.save();
+        return res.status(200).json({ status: 'success', watchlist: watchlistItem });
+    } catch (err) {
+        return res.status(500).json({ status: 'error', message: 'Error al actualizar favorito.', error: err.message });
+    }
 }
 
 //Delete watchlist item
-const watchlistDeleteOne = (req, res) => {
-    res
-    .status(200)
-    .json({
-        "status": "success watchlistDeleteOne",
-    })
+const watchlistDeleteOne = async (req, res) => {
+    try {
+        const watchlistItem = await watchlist.findById(req.params.watchlistId);
+        
+        if (!watchlistItem) {
+            return res.status(404).json({ status: 'error', message: 'Item de favoritos no encontrado.' });
+        }
+        
+        // Optional: verify ownership
+        const sessionUser = req.session && req.session.user;
+        if (sessionUser && watchlistItem.userId !== sessionUser.userid) {
+            return res.status(403).json({ status: 'error', message: 'No puedes eliminar favoritos de otro usuario.' });
+        }
+        
+        await watchlist.findByIdAndDelete(req.params.watchlistId);
+        return res.status(200).json({ status: 'success', message: 'Item removido de favoritos.' });
+    } catch (err) {
+        return res.status(500).json({ status: 'error', message: 'Error al eliminar favorito.', error: err.message });
+    }
 }
 
 module.exports = {

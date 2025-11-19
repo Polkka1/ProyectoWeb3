@@ -30,31 +30,21 @@ block content
           .col-md-6.col-lg-4.mb-4
             .card.h-100.border-0.shadow-sm
               .position-relative
-                img.card-img-top(src=item.image, alt=item.title, style="height: 200px; object-fit: cover;")
+                img.card-img-top(src=item.images && item.images.length > 0 ? item.images[0] : '/images/placeholder.jpg', alt=item.title, style="height: 200px; object-fit: cover;")
                 .position-absolute.top-0.end-0.m-2
-                  button.btn.btn-light.btn-sm.rounded-circle(onclick=`removeFavorite(${item.id})`)
+                  button.btn.btn-light.btn-sm.rounded-circle(onclick=`removeFavorite('${item.watchlistId}')`)
                     i.bi.bi-heart-fill.text-danger
 
               .card-body.d-flex.flex-column
                 h6.card-title.fw-bold= item.title
                 p.card-text.text-muted.small.flex-grow-1= item.description
                 
-                .d-flex.justify-content-between.align-items-center.mb-2
+                .d-flex.justify-content-between.align-items-center.mb-3
                   span.h5.text-primary.mb-0 $#{item.price}
-                  span.badge.bg-light.text-dark= item.condition
-                
-                .mb-3
-                  small.text-muted
-                    i.bi.bi-person.me-1
-                    | #{item.seller}
-                  br
-                  small.text-muted
-                    i.bi.bi-calendar.me-1
-                    | #{new Date(item.createdAt).toLocaleDateString('es-EC')}
+                  small.text-muted= item.category
 
-                // Action Buttons
                 .d-grid.gap-2.mt-auto
-                  a.btn.btn-primary.btn-sm(href=`/items/${item.id}`) Ver Detalles
+                  a.btn.btn-primary.btn-sm(href=`/items/${item._id}`) Ver Detalles
                   a.btn.btn-outline-success.btn-sm(
                     href=`https://wa.me/593999999999?text=Hola! Vi tu publicación en CampusSwap: ${item.title}. ¿Está disponible?`,
                     target="_blank"
@@ -74,11 +64,14 @@ block content
 
   // JavaScript for favorites functionality
   script.
-    function removeFavorite(itemId) {
+    function removeFavorite(watchlistId) {
+      if (!watchlistId) return;
       if (confirm('¿Quitar este item de tus favoritos?')) {
-        // In real app, make API call to remove favorite
-        console.log(`Remove favorite: ${itemId}`);
-        // For demo, just reload page
-        location.reload();
+        // Create form and submit to remove endpoint
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/me/favorites/${watchlistId}/remove`;
+        document.body.appendChild(form);
+        form.submit();
       }
     }

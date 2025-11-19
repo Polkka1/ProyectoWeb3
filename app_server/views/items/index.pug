@@ -2,6 +2,39 @@ extends ../layout
 
 block content
   .container.my-4
+    // Search & Filters for full items list
+    .card.mb-4.shadow-sm.border-0
+      .card-body
+        form.row.g-3(method="get" action="/items")
+          .col-md-4
+            label.form-label.mb-1 Buscar
+            .input-group
+              span.input-group-text
+                i.bi.bi-search
+              input.form-control(type="text", name="q", value=search && search.q, placeholder="Título o descripción...")
+          .col-md-2
+            label.form-label.mb-1 Categoría
+            select.form-select(name="category")
+              option(value="") Todas
+              each c in ['Libros','Tecnología','Arte','Hogar','Otros']
+                option(value=c selected=search && search.category===c)= c
+          .col-md-2
+            label.form-label.mb-1 Condición
+            select.form-select(name="condition")
+              option(value="") Todas
+              each cond in ['Nuevo','Como nuevo','Usado']
+                option(value=cond selected=search && search.condition===cond)= cond
+          .col-md-2
+            label.form-label.mb-1 Precio Mín
+            input.form-control(type="number", min="0", name="minPrice", value=search && search.minPrice)
+          .col-md-2
+            label.form-label.mb-1 Precio Máx
+            input.form-control(type="number", min="0", name="maxPrice", value=search && search.maxPrice)
+          .col-12.text-end
+            button.btn.btn-primary.me-2(type="submit") Filtrar
+            a.btn.btn-outline-secondary(href="/items") Limpiar
+        if meta
+          .mt-2.small.text-muted Mostrando #{meta.count} de #{meta.total} resultados
     // Header
     .d-flex.align-items-center.justify-content-between.mb-3
       h2.fw-bold.mb-0 Items

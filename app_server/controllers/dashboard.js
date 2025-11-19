@@ -51,23 +51,37 @@ const myFavorites = async (req, res, next) => {
     return res.redirect('/auth/login');
   }
 
-  const apiUrl = `${req.protocol}://${req.get('host')}/api/watchlist`;
+  const baseUrl = `${req.protocol}://${req.get('host')}/api`;
   try {
-    const response = await axios.get(apiUrl);
-    let watchlistItems = Array.isArray(response.data) ? response.data : [];
+    // Fetch watchlist and all items in parallel
+    const [watchlistRes, itemsRes] = await Promise.all([
+      axios.get(`${baseUrl}/watchlist`),
+      axios.get(`${baseUrl}/items`)
+    ]);
+    
+    let watchlistItems = Array.isArray(watchlistRes.data) ? watchlistRes.data : [];
+    const allItems = Array.isArray(itemsRes.data) ? itemsRes.data : [];
     
     // Filter by current user
     watchlistItems = watchlistItems.filter(w => w.userId === userId);
     
-    // Transform watchlist format to match view expectations
-    const favorites = watchlistItems.map(w => ({
-      id: w.itemId,
-      title: w.itemTitle,
-      price: w.itemPrice,
-      seller: w.sellerName,
-      createdAt: w.created,
-      watchlistId: w._id
-    }));
+    // Map watchlist to favorites with actual item data
+    const favorites = watchlistItems.map(w => {
+      const actualItem = allItems.find(item => item.itemId === w.itemId);
+      return {
+        _id: actualItem?._id || null,
+        id: w.itemId,
+        title: w.itemTitle,
+        description: actualItem?.description || '',
+        price: w.itemPrice,
+        category: actualItem?.category || '',
+        condition: actualItem?.condition || '',
+        images: actualItem?.images || [],
+        seller: w.sellerName,
+        createdAt: w.created,
+        watchlistId: w._id
+      };
+    }).filter(f => f._id); // Only include favorites where the item still exists
 
     res.render('dashboard/favorites', { 
       title: 'Mis Favoritos - CampuSwap',
@@ -146,9 +160,30 @@ const toggleItemStatus = async (req, res, next) => {
   }
 };
 
+// POST remove favorite
+const removeFavorite = async (req, res, next) => {
+  const watchlistId = req.params.watchlistId;
+  const userId = req.session && req.session.user && req.session.user.userid;
+  
+  if (!userId) {
+    return res.redirect('/auth/login');
+  }
+
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/watchlist/${watchlistId}`;
+  try {
+    await axios.delete(apiUrl);
+    console.log(`Watchlist item ${watchlistId} removed by user ${userId}`);
+    res.redirect('/me/favorites');
+  } catch (err) {
+    console.error('Error removing favorite:', err.message);
+    res.redirect('/me/favorites');
+  }
+};
+
 module.exports = {
   myItems,
   myFavorites,
   deleteItem,
-  toggleItemStatus
+  toggleItemStatus,
+  removeFavorite
 };

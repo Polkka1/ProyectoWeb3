@@ -35,6 +35,13 @@ block content
               i.bi.bi-star
               |  #{item.condition}
           h3.text-primary.fw-bold.mb-3 $#{item.price}
+          
+          // Favorite button
+          .mb-3
+            button.btn.btn-outline-danger(onclick=`addToFavorites(${item.itemId}, '${item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${item.price}, ${item.sellerId}, '${item.sellerName ? item.sellerName.replace(/'/g, "\\'").replace(/"/g, '&quot;') : 'Vendedor'}')`)
+              i.bi.bi-heart.me-2
+              | Agregar a Favoritos
+          
           if item.description
             p.mb-4= item.description
           .d-flex.flex-wrap.gap-2
@@ -55,3 +62,50 @@ block content
         span.me-3 ID: #{item.itemId || item._id}
         if item.created
           span Publicado: #{new Date(item.created).toLocaleDateString()}
+
+  // JavaScript for favorites
+  script.
+    async function addToFavorites(itemId, itemTitle, itemPrice, sellerId, sellerName) {
+      if (!itemId) {
+        alert('Error: Item no válido');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itemId: itemId,
+            itemTitle: itemTitle,
+            itemPrice: itemPrice,
+            sellerId: sellerId,
+            sellerName: sellerName
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          alert('✓ Agregado a favoritos');
+          // Optionally redirect to favorites
+          if (confirm('¿Ver tus favoritos?')) {
+            window.location.href = '/me/favorites';
+          }
+        } else if (response.status === 401) {
+          if (confirm('Debes iniciar sesión para guardar favoritos. ¿Ir a login?')) {
+            window.location.href = '/auth/login?returnTo=' + encodeURIComponent(window.location.pathname);
+          }
+        } else if (response.status === 409) {
+          alert('Este item ya está en tus favoritos');
+          if (confirm('¿Ver tus favoritos?')) {
+            window.location.href = '/me/favorites';
+          }
+        } else {
+          alert('Error: ' + (data.message || 'No se pudo agregar a favoritos'));
+        }
+      } catch (err) {
+        console.error('Error adding to favorites:', err);
+        alert('Error de red. Intenta de nuevo.');
+      }
+    }
