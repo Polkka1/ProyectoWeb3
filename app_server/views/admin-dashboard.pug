@@ -1,24 +1,452 @@
 extends layout
 
 block content
-  h1 Admin Dashboard
-  if error
-    p.text-danger #{error}
-  table.table
-    thead
-      tr
-        th Título
-        th Precio
-        th Categoría
-        th Estado
-        th Acciones
-    tbody
-      each item in items
-        tr
-          td #{item.title}
-          td $#{item.price}
-          td #{item.category}
-          td #{item.condition}
-          td
-            form(method="post", action=`/admin/items/${item._id}/delete`, onsubmit="return confirm('¿Seguro que deseas eliminar este item?');")
-              button.btn.btn-danger(type="submit") Eliminar
+  .container-fluid.my-4
+    .row.mb-4
+      .col
+        h1.fw-bold
+          i.bi.bi-shield-check.me-2
+          | Panel de Administración
+        p.text-muted Sistema de gestión y moderación de CampuSwap
+
+    // Stats Cards
+    .row.mb-4
+      .col-md-3
+        .card.border-0.shadow-sm
+          .card-body
+            .d-flex.justify-content-between.align-items-center
+              div
+                .text-muted.small ITEMS TOTALES
+                h3.mb-0= stats.totalItems
+              i.bi.bi-box.fs-1.text-primary
+      .col-md-3
+        .card.border-0.shadow-sm
+          .card-body
+            .d-flex.justify-content-between.align-items-center
+              div
+                .text-muted.small USUARIOS
+                h3.mb-0= stats.totalUsers
+              i.bi.bi-people.fs-1.text-success
+      .col-md-3
+        .card.border-0.shadow-sm
+          .card-body
+            .d-flex.justify-content-between.align-items-center
+              div
+                .text-muted.small REVIEWS
+                h3.mb-0= stats.totalReviews
+              i.bi.bi-star.fs-1.text-warning
+      .col-md-3
+        .card.border-0.shadow-sm
+          .card-body
+            .d-flex.justify-content-between.align-items-center
+              div
+                .text-muted.small CATEGORÍAS
+                h3.mb-0= stats.totalCategories
+              i.bi.bi-grid.fs-1.text-info
+
+    // Tabs Navigation
+    ul#adminTabs.nav.nav-tabs.mb-4(role="tablist")
+      li.nav-item(role="presentation")
+        button#items-tab.nav-link.active(data-bs-toggle="tab", data-bs-target="#items", type="button", role="tab")
+          i.bi.bi-box.me-2
+          | Gestión de Items
+      li.nav-item(role="presentation")
+        button#users-tab.nav-link(data-bs-toggle="tab", data-bs-target="#users", type="button", role="tab")
+          i.bi.bi-people.me-2
+          | Usuarios
+      li.nav-item(role="presentation")
+        button#testing-tab.nav-link(data-bs-toggle="tab", data-bs-target="#testing", type="button", role="tab")
+          i.bi.bi-bug.me-2
+          | Testing API
+      li.nav-item(role="presentation")
+        button#database-tab.nav-link(data-bs-toggle="tab", data-bs-target="#database", type="button", role="tab")
+          i.bi.bi-database.me-2
+          | Base de Datos
+
+    // Tab Content
+    .tab-content#adminTabContent
+      // Items Management Tab
+      #items.tab-pane.fade.show.active(role="tabpanel")
+        .card.border-0.shadow-sm
+          .card-body
+            .d-flex.justify-content-between.align-items-center.mb-3
+              h5.mb-0
+                i.bi.bi-box.me-2
+                | Lista de Items
+              .btn-group(role="group")
+                button.btn.btn-sm.btn-outline-primary(onclick="filterItems('all')") Todos
+                button.btn.btn-sm.btn-outline-success(onclick="filterItems('available')") Disponibles
+                button.btn.btn-sm.btn-outline-secondary(onclick="filterItems('sold')") Vendidos
+            
+            if error
+              .alert.alert-danger= error
+            
+            .table-responsive
+              table.table.table-hover#itemsTable
+                thead
+                  tr
+                    th ID
+                    th Título
+                    th Vendedor
+                    th Precio
+                    th Categoría
+                    th Estado
+                    th Cantidad
+                    th Acciones
+                tbody
+                  each item in items
+                    tr(data-status=item.isAvailable ? 'available' : 'sold')
+                      td.text-muted.small= item.itemId
+                      td
+                        strong= item.title
+                        if item.description
+                          br
+                          small.text-muted= item.description.substring(0, 50) + '...'
+                      td
+                        if item.sellerName
+                          = item.sellerName
+                          br
+                          small.text-muted ID: #{item.sellerId}
+                        else
+                          span.text-muted N/A
+                      td.fw-bold $#{item.price}
+                      td
+                        span.badge.bg-info= item.category
+                      td
+                        if item.isAvailable !== false
+                          span.badge.bg-success Disponible
+                        else
+                          span.badge.bg-secondary Vendido
+                      td.text-center= item.quantity || 1
+                      td
+                        .btn-group(role="group")
+                          a.btn.btn-sm.btn-outline-primary(href=`/items/${item._id}`, target="_blank", title="Ver")
+                            i.bi.bi-eye
+                          button.btn.btn-sm.btn-outline-warning(onclick=`toggleItemStatus('${item._id}', ${!item.isAvailable})`, title="Cambiar estado")
+                            i.bi.bi-arrow-repeat
+                          form.d-inline(method="post", action=`/admin/items/${item._id}/delete`, onsubmit="return confirm('¿Eliminar este item?');")
+                            button.btn.btn-sm.btn-outline-danger(type="submit", title="Eliminar")
+                              i.bi.bi-trash
+
+      // Users Management Tab
+      #users.tab-pane.fade(role="tabpanel")
+        .card.border-0.shadow-sm
+          .card-body
+            h5.mb-3
+              i.bi.bi-people.me-2
+              | Gestión de Usuarios
+            
+            .table-responsive
+              table.table.table-hover
+                thead
+                  tr
+                    th ID Usuario
+                    th Nombre
+                    th Email
+                    th Tipo
+                    th Verificado
+                    th Items
+                    th Rating
+                    th Fecha Registro
+                tbody
+                  if users && users.length
+                    each user in users
+                      tr
+                        td.text-muted.small= user.userid
+                        td
+                          strong= user.name + (user.lastname ? ' ' + user.lastname : '')
+                        td
+                          small= user.email
+                        td
+                          span.badge.bg-secondary= user.userType || 'Both'
+                        td
+                          if user.isVerified
+                            i.bi.bi-check-circle-fill.text-success
+                          else
+                            i.bi.bi-x-circle.text-muted
+                        td.text-center= items.filter(i => i.sellerId === user.userid).length
+                        td
+                          if user.rating && user.rating.average
+                            span.text-warning
+                              i.bi.bi-star-fill
+                              | #{user.rating.average.toFixed(1)}
+                          else
+                            span.text-muted N/A
+                        td.text-muted.small= new Date(user.created).toLocaleDateString()
+                  else
+                    tr
+                      td.text-center.text-muted(colspan="8") No hay usuarios para mostrar
+
+      // API Testing Tab
+      #testing.tab-pane.fade(role="tabpanel")
+        .row
+          // Create Category
+          .col-md-6.mb-4
+            .card.border-0.shadow-sm
+              .card-header.bg-success.text-white
+                h6.mb-0
+                  i.bi.bi-grid.me-2
+                  | Crear Categoría
+              .card-body
+                .mb-3
+                  label.form-label Nombre de la categoría
+                  input#categoryName.form-control(type="text", placeholder="ej: Deportes")
+                  .form-text Nombre único de la categoría
+                .mb-3
+                  label.form-label Descripción (opcional)
+                  textarea#categoryDesc.form-control(rows="2", placeholder="Descripción breve")
+                button.btn.btn-success(onclick="createCategory()")
+                  i.bi.bi-plus-circle.me-2
+                  | Crear Categoría
+                div#categoryCreateResult.mt-3
+
+          // Create Review
+          .col-md-6.mb-4
+            .card.border-0.shadow-sm
+              .card-header.bg-warning.text-white
+                h6.mb-0
+                  i.bi.bi-star.me-2
+                  | Crear Review
+              .card-body
+                .row.mb-2
+                  .col-6
+                    label.form-label Item ID
+                    input#reviewItemId.form-control(type="number", placeholder="100001")
+                  .col-6
+                    label.form-label Seller ID
+                    input#reviewSellerId.form-control(type="number", placeholder="123456")
+                .mb-2
+                  label.form-label Rating
+                  select#reviewRating.form-select
+                    option(value="5") ⭐⭐⭐⭐⭐ (5)
+                    option(value="4") ⭐⭐⭐⭐ (4)
+                    option(value="3") ⭐⭐⭐ (3)
+                    option(value="2") ⭐⭐ (2)
+                    option(value="1") ⭐ (1)
+                .mb-2
+                  label.form-label Título
+                  input#reviewTitle.form-control(type="text", placeholder="Título de la reseña")
+                .mb-2
+                  label.form-label Comentario
+                  textarea#reviewComment.form-control(rows="2", placeholder="Comentario detallado")
+                .form-check.mb-3
+                  input#reviewPurchaseVerified.form-check-input(type="checkbox", checked)
+                  label.form-check-label Compra verificada
+                button.btn.btn-warning(onclick="createReview()")
+                  i.bi.bi-plus-circle.me-2
+                  | Crear Review
+                div#reviewCreateResult.mt-3
+
+          // API Health Check
+          .col-md-6.mb-4
+            .card.border-0.shadow-sm
+              .card-header.bg-info.text-white
+                h6.mb-0
+                  i.bi.bi-heart-pulse.me-2
+                  | Health Check
+              .card-body
+                button.btn.btn-info.mb-3(onclick="checkHealth()")
+                  i.bi.bi-activity.me-2
+                  | Verificar API
+                div#healthResult
+
+          // Bulk Operations
+          .col-md-6.mb-4
+            .card.border-0.shadow-sm
+              .card-header.bg-primary.text-white
+                h6.mb-0
+                  i.bi.bi-lightning.me-2
+                  | Operaciones Masivas
+              .card-body
+                .d-grid.gap-2
+                  button.btn.btn-outline-primary(onclick="bulkOperation('markAllAvailable')")
+                    i.bi.bi-check-circle.me-2
+                    | Marcar todos como disponibles
+                  button.btn.btn-outline-secondary(onclick="bulkOperation('markAllSold')")
+                    i.bi.bi-x-circle.me-2
+                    | Marcar todos como vendidos
+                  button.btn.btn-outline-danger(onclick="if(confirm('¿Eliminar TODOS los items vendidos?')) bulkOperation('deleteSold')")
+                    i.bi.bi-trash.me-2
+                    | Eliminar items vendidos
+
+      // Database Tools Tab
+      #database.tab-pane.fade(role="tabpanel")
+        .row
+          .col-md-6.mb-4
+            .card.border-0.shadow-sm
+              .card-header.bg-dark.text-white
+                h6.mb-0
+                  i.bi.bi-database.me-2
+                  | Estadísticas de la Base de Datos
+              .card-body
+                dl.row.mb-0
+                  dt.col-sm-6 Total Documentos
+                  dd.col-sm-6.text-end= stats.totalItems + stats.totalUsers + stats.totalReviews + stats.totalCategories
+                  dt.col-sm-6 Collections
+                  dd.col-sm-6.text-end 9
+                  dt.col-sm-6 Database Name
+                  dd.col-sm-6.text-end.text-muted campuswapdb
+                  dt.col-sm-6 Conexión
+                  dd.col-sm-6.text-end
+                    span.badge.bg-success
+                      i.bi.bi-circle-fill.me-1
+                      | Activa
+
+          .col-md-6.mb-4
+            .card.border-0.shadow-sm.border-warning
+              .card-header.bg-warning.text-dark
+                h6.mb-0
+                  i.bi.bi-exclamation-triangle.me-2
+                  | Operaciones Peligrosas
+              .card-body
+                p.text-danger.small
+                  i.bi.bi-shield-exclamation.me-2
+                  | Estas operaciones son irreversibles
+                .d-grid.gap-2
+                  button.btn.btn-outline-warning(onclick="if(confirm('¿Resetear contadores de ID?')) resetCounters()")
+                    i.bi.bi-arrow-counterclockwise.me-2
+                    | Resetear Contadores
+                  button.btn.btn-outline-danger(onclick="if(confirm('¿Eliminar TODOS los items? Esta acción no se puede deshacer.')) clearCollection('items')")
+                    i.bi.bi-trash.me-2
+                    | Limpiar Items
+                  button.btn.btn-danger(onclick="if(confirm('¿Limpiar TODA la base de datos? ⚠️ PELIGRO') && confirm('¿Estás ABSOLUTAMENTE seguro?')) clearAllCollections()")
+                    i.bi.bi-exclamation-octagon.me-2
+                    | Limpiar Todo
+
+  // JavaScript
+  script.
+    // Filter items by status
+    function filterItems(status) {
+      const rows = document.querySelectorAll('#itemsTable tbody tr');
+      rows.forEach(row => {
+        if (status === 'all') {
+          row.style.display = '';
+        } else {
+          const rowStatus = row.dataset.status;
+          row.style.display = rowStatus === status ? '' : 'none';
+        }
+      });
+    }
+
+    // Toggle item status
+    async function toggleItemStatus(itemId, makeAvailable) {
+      try {
+        const res = await fetch(`/admin/items/${itemId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isAvailable: makeAvailable })
+        });
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert('Error al cambiar el estado');
+        }
+      } catch (err) {
+        alert('Error de red');
+      }
+    }
+
+    // Create Category
+    async function createCategory() {
+      const name = document.getElementById('categoryName').value.trim();
+      const description = document.getElementById('categoryDesc').value.trim();
+      const resultDiv = document.getElementById('categoryCreateResult');
+      
+      if (!name) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Ingresa un nombre</div>';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          resultDiv.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>${data.message || 'Categoría creada'}</div>`;
+          document.getElementById('categoryName').value = '';
+          document.getElementById('categoryDesc').value = '';
+        } else {
+          resultDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle me-2"></i>${data.message || 'Error'}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Error de red</div>';
+      }
+    }
+
+    // Create Review
+    async function createReview() {
+      const itemId = parseInt(document.getElementById('reviewItemId').value);
+      const sellerId = parseInt(document.getElementById('reviewSellerId').value);
+      const rating = parseInt(document.getElementById('reviewRating').value);
+      const title = document.getElementById('reviewTitle').value.trim();
+      const comment = document.getElementById('reviewComment').value.trim();
+      const purchaseVerified = document.getElementById('reviewPurchaseVerified').checked;
+      const resultDiv = document.getElementById('reviewCreateResult');
+      
+      if (!itemId || !sellerId || !rating || !title || !comment) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Completa todos los campos</div>';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId, sellerId, rating, title, comment, purchaseVerified })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          resultDiv.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>${data.message || 'Review creada'}</div>`;
+          document.getElementById('reviewTitle').value = '';
+          document.getElementById('reviewComment').value = '';
+        } else {
+          resultDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle me-2"></i>${data.message || 'Error'}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Error de red</div>';
+      }
+    }
+
+    // Health Check
+    async function checkHealth() {
+      const resultDiv = document.getElementById('healthResult');
+      resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Verificando...';
+      
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        
+        resultDiv.innerHTML = `
+          <div class="alert alert-success">
+            <h6><i class="bi bi-check-circle me-2"></i>API Status: ${data.status}</h6>
+            <small>Uptime: ${Math.floor(data.uptime / 60)} minutos</small><br>
+            <small>Node: ${data.node}</small><br>
+            <small>Timestamp: ${new Date(data.timestamp).toLocaleString()}</small>
+          </div>
+        `;
+      } catch (err) {
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-2"></i>API no responde</div>';
+      }
+    }
+
+    // Bulk Operations (placeholder)
+    function bulkOperation(op) {
+      alert(`Operación "${op}" no implementada aún. Implementar en el backend.`);
+    }
+
+    function resetCounters() {
+      alert('Función de reseteo no implementada. Requiere endpoint en API.');
+    }
+
+    function clearCollection(name) {
+      alert(`Limpiar colección "${name}" no implementado. Requiere endpoint en API.`);
+    }
+
+    function clearAllCollections() {
+      alert('Limpiar todas las colecciones no implementado.');
+    }

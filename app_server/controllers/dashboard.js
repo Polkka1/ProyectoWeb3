@@ -1,141 +1,149 @@
+const axios = require('axios');
+
 // GET user dashboard - my items
-const myItems = (req, res, next) => {
-  // Simulate user's items - in real app, filter by logged-in user
-  // For demo purposes, showing items from our "demo user"
-  const userItems = [
-    {
-      id: 2,
-      title: "MacBook Air M1 2021",
-      description: "Laptop en perfecto estado, batería al 95%, incluye cargador original. Ideal para diseño, programación y uso académico.",
-      price: 950,
-      category: "Tecnología", 
-      condition: "Usado",
-      image: "https://picsum.photos/300/200?random=2",
-      createdAt: "2025-01-08",
-      contactClicks: 25,
-      status: "active"
-    },
-    {
-      id: 7,
-      title: "iPad 9th Gen 64GB",
-      description: "Tablet en excelente estado, perfecto para tomar notas digitales. Incluye Apple Pencil compatible.",
-      price: 280,
-      category: "Tecnología",
-      condition: "Como nuevo",
-      image: "https://picsum.photos/300/200?random=7",
-      createdAt: "2025-01-06",
-      contactClicks: 22,
-      status: "active"
-    },
-    {
-      id: 9,
-      title: "Libro de Física Universitaria",
-      description: "Sears y Zemansky, 14va edición. Usado pero en buen estado.",
-      price: 65,
-      category: "Libros",
-      condition: "Usado",
-      image: "https://picsum.photos/300/200?random=9",
-      createdAt: "2025-01-05",
-      contactClicks: 8,
-      status: "active"
-    },
-    {
-      id: 10,
-      title: "Escritorio de Estudio",
-      description: "Escritorio de madera, perfecto para estudiar. Incluye cajonera.",
-      price: 120,
-      category: "Hogar",
-      condition: "Usado",
-      image: "https://picsum.photos/300/200?random=10",
-      createdAt: "2025-01-03",
-      contactClicks: 5,
-      status: "sold"
-    }
-  ];
+const myItems = async (req, res, next) => {
+  const userId = req.session && req.session.user && req.session.user.userid;
+  const userName = req.session && req.session.user && req.session.user.name || 'Usuario';
+  
+  if (!userId) {
+    return res.redirect('/auth/login');
+  }
 
-  // Calculate stats
-  const stats = {
-    total: userItems.length,
-    active: userItems.filter(item => item.status === 'active').length,
-    sold: userItems.filter(item => item.status === 'sold').length,
-    totalViews: userItems.reduce((sum, item) => sum + item.contactClicks, 0)
-  };
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items`;
+  try {
+    const response = await axios.get(apiUrl);
+    const allItems = Array.isArray(response.data) ? response.data : [];
+    
+    // Filter items by logged-in user's sellerId
+    const userItems = allItems.filter(item => item.sellerId === userId);
+    
+    // Calculate stats
+    const stats = {
+      total: userItems.length,
+      active: userItems.filter(item => item.isAvailable !== false).length,
+      sold: userItems.filter(item => item.isAvailable === false).length,
+      totalViews: userItems.reduce((sum, item) => sum + (item.views || 0), 0)
+    };
 
-  res.render('dashboard/my-items', { 
-    title: 'Mis Items - CampuSwap',
-    items: userItems,
-    stats: stats,
-    userName: (req.session && req.session.user && req.session.user.name) || 'Usuario'
-  });
+    res.render('dashboard/my-items', { 
+      title: 'Mis Items - CampuSwap',
+      items: userItems,
+      stats: stats,
+      userName
+    });
+  } catch (err) {
+    console.error('Error fetching user items:', err.message);
+    res.render('dashboard/my-items', { 
+      title: 'Mis Items - CampuSwap',
+      items: [],
+      stats: { total: 0, active: 0, sold: 0, totalViews: 0 },
+      userName
+    });
+  }
 };
 
 // GET user favorites
-const myFavorites = (req, res, next) => {
-  // Simulate user's favorite items
-  const favoriteItems = [
-    {
-      id: 1,
-      title: "Cálculo Stewart 8va Edición",
-      description: "Libro de cálculo en excelente estado, pocas marcas de resaltador.",
-      price: 85,
-      category: "Libros",
-      condition: "Como nuevo",
-      image: "https://picsum.photos/300/200?random=1",
-      seller: "María González",
-      createdAt: "2025-01-10"
-    },
-    {
-      id: 3,
-      title: "Calculadora TI-84 Plus",
-      description: "Calculadora gráfica para matemáticas avanzadas, cálculo, estadística.",
-      price: 120,
-      category: "Tecnología",
-      condition: "Nuevo",
-      image: "https://picsum.photos/300/200?random=3",
-      seller: "Ana López",
-      createdAt: "2025-01-12"
-    },
-    {
-      id: 4,
-      title: "Set de Pinceles Profesionales",
-      description: "Juego completo de pinceles para arte, diferentes tamaños y formas.",
-      price: 35,
-      category: "Arte",
-      condition: "Como nuevo",
-      image: "https://picsum.photos/300/200?random=4",
-      seller: "Sofia Herrera",
-      createdAt: "2025-01-09"
-    }
-  ];
+const myFavorites = async (req, res, next) => {
+  const userId = req.session && req.session.user && req.session.user.userid;
+  const userName = req.session && req.session.user && req.session.user.name || 'Usuario';
+  
+  if (!userId) {
+    return res.redirect('/auth/login');
+  }
 
-  res.render('dashboard/favorites', { 
-    title: 'Mis Favoritos - CampuSwap',
-    favorites: favoriteItems,
-    userName: (req.session && req.session.user && req.session.user.name) || 'Usuario'
-  });
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/watchlist`;
+  try {
+    const response = await axios.get(apiUrl);
+    let watchlistItems = Array.isArray(response.data) ? response.data : [];
+    
+    // Filter by current user
+    watchlistItems = watchlistItems.filter(w => w.userId === userId);
+    
+    // Transform watchlist format to match view expectations
+    const favorites = watchlistItems.map(w => ({
+      id: w.itemId,
+      title: w.itemTitle,
+      price: w.itemPrice,
+      seller: w.sellerName,
+      createdAt: w.created,
+      watchlistId: w._id
+    }));
+
+    res.render('dashboard/favorites', { 
+      title: 'Mis Favoritos - CampuSwap',
+      favorites,
+      userName
+    });
+  } catch (err) {
+    console.error('Error fetching favorites:', err.message);
+    res.render('dashboard/favorites', { 
+      title: 'Mis Favoritos - CampuSwap',
+      favorites: [],
+      userName
+    });
+  }
 };
 
-// POST delete item (placeholder)
-const deleteItem = (req, res, next) => {
+// POST delete item
+const deleteItem = async (req, res, next) => {
   const itemId = req.params.id;
+  const userId = req.session && req.session.user && req.session.user.userid;
   
-  // In real app, delete from database and check user ownership
-  console.log(`Item ${itemId} would be deleted`);
-  
-  // Redirect back to dashboard with success message
-  // For now, just redirect - in real app would add flash message
-  res.redirect('/me/items');
+  if (!userId) {
+    return res.redirect('/auth/login');
+  }
+
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items/${itemId}`;
+  try {
+    // First verify ownership by fetching the item
+    const getRes = await axios.get(apiUrl);
+    const item = getRes.data.item || getRes.data;
+    
+    if (item.sellerId !== userId) {
+      console.error('User tried to delete item they do not own');
+      return res.redirect('/me/items');
+    }
+    
+    // Delete the item
+    await axios.delete(apiUrl);
+    console.log(`Item ${itemId} deleted by user ${userId}`);
+    res.redirect('/me/items');
+  } catch (err) {
+    console.error('Error deleting item:', err.message);
+    res.redirect('/me/items');
+  }
 };
 
 // POST toggle item status (active/sold)
-const toggleItemStatus = (req, res, next) => {
+const toggleItemStatus = async (req, res, next) => {
   const itemId = req.params.id;
   const { status } = req.body;
+  const userId = req.session && req.session.user && req.session.user.userid;
   
-  // In real app, update database
-  console.log(`Item ${itemId} status would be changed to: ${status}`);
-  
-  res.redirect('/me/items');
+  if (!userId) {
+    return res.redirect('/auth/login');
+  }
+
+  const apiUrl = `${req.protocol}://${req.get('host')}/api/items/${itemId}`;
+  try {
+    // Verify ownership
+    const getRes = await axios.get(apiUrl);
+    const item = getRes.data.item || getRes.data;
+    
+    if (item.sellerId !== userId) {
+      console.error('User tried to update item they do not own');
+      return res.redirect('/me/items');
+    }
+    
+    // Update availability status
+    const isAvailable = status === 'active';
+    await axios.put(apiUrl, { isAvailable });
+    console.log(`Item ${itemId} status changed to: ${status}`);
+    res.redirect('/me/items');
+  } catch (err) {
+    console.error('Error updating item status:', err.message);
+    res.redirect('/me/items');
+  }
 };
 
 module.exports = {
