@@ -33,8 +33,9 @@ const itemsCreate = async (req, res) => {
         // images → handle both uploaded files and URLs
         let imageArray = [];
         
-        // Add uploaded files
-        if (req.files && req.files.length > 0) {
+        // Add uploaded files (only works in local development, not on Vercel)
+        const isVercel = process.env.VERCEL === '1';
+        if (!isVercel && req.files && req.files.length > 0) {
             imageArray = req.files.map(file => `/uploads/items/${file.filename}`);
         }
         
@@ -49,7 +50,11 @@ const itemsCreate = async (req, res) => {
             imageArray = [...imageArray, ...urlImages];
         }
         
-        if (imageArray.length === 0) errors.push('Agrega al menos una imagen (archivo o URL)');
+        // On Vercel, require URLs; locally allow files or URLs
+        const errorMsg = isVercel 
+            ? 'Agrega al menos una imagen (URL). Nota: El servidor no soporta subida de archivos.'
+            : 'Agrega al menos una imagen (archivo o URL)';
+        if (imageArray.length === 0) errors.push(errorMsg);
 
         if (errors.length > 0) {
             console.log('Validation errors:', errors);
@@ -261,8 +266,9 @@ const itemsUpdateOne = async (req, res) => {
         if (images !== undefined || (req.files && req.files.length > 0)) {
             let imageArray = [];
             
-            // Add uploaded files
-            if (req.files && req.files.length > 0) {
+            // Add uploaded files (only works in local development)
+            const isVercel = process.env.VERCEL === '1';
+            if (!isVercel && req.files && req.files.length > 0) {
                 imageArray = req.files.map(file => `/uploads/items/${file.filename}`);
             }
             
@@ -277,7 +283,10 @@ const itemsUpdateOne = async (req, res) => {
                 imageArray = [...imageArray, ...urlImages];
             }
             
-            if (imageArray.length === 0) errors.push('Debe haber al menos una imagen (archivo o URL)');
+            const errorMsg = isVercel 
+                ? 'Debe haber al menos una imagen (URL)'
+                : 'Debe haber al menos una imagen (archivo o URL)';
+            if (imageArray.length === 0) errors.push(errorMsg);
             else updateFields.images = imageArray;
         }
 

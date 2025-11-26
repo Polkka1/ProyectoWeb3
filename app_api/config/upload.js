@@ -2,25 +2,30 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
+// Check if running on Vercel (read-only filesystem)
+const isVercel = process.env.VERCEL === '1';
+
+// Ensure uploads directory exists (only in local development)
 const uploadDir = path.join(__dirname, '../public/uploads/items');
-if (!fs.existsSync(uploadDir)) {
+if (!isVercel && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename: timestamp-randomstring-originalname
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const nameWithoutExt = path.basename(file.originalname, ext);
-    cb(null, nameWithoutExt + '-' + uniqueSuffix + ext);
-  }
-});
+// Configure storage - use memory storage on Vercel (temporary workaround)
+const storage = isVercel 
+  ? multer.memoryStorage() 
+  : multer.diskStorage({
+      destination: function (req, file, cb) {
+        cb(null, uploadDir);
+      },
+      filename: function (req, file, cb) {
+        // Generate unique filename: timestamp-randomstring-originalname
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        const nameWithoutExt = path.basename(file.originalname, ext);
+        cb(null, nameWithoutExt + '-' + uniqueSuffix + ext);
+      }
+    });
 
 // File filter - only images
 const fileFilter = (req, file, cb) => {
