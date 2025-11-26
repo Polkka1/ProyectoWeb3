@@ -6,6 +6,7 @@ const items = mongoose.model('item');
 // Create new item
 const itemsCreate = async (req, res) => {
     console.log('itemsCreate called. req.body:', req.body);
+    console.log('itemsCreate files:', req.files);
     try {
         const { title, description, price, category, condition, images, whatsapp, location, quantity } = req.body;
         // Require authenticated user and link item to creator
@@ -29,16 +30,26 @@ const itemsCreate = async (req, res) => {
             else qty = q;
         }
 
-        // images → ensure array of non-empty strings
+        // images → handle both uploaded files and URLs
         let imageArray = [];
-        if (images) {
-            if (Array.isArray(images)) {
-                imageArray = images.map(s => String(s).trim()).filter(Boolean);
-            } else {
-                imageArray = [String(images).trim()].filter(Boolean);
-            }
+        
+        // Add uploaded files
+        if (req.files && req.files.length > 0) {
+            imageArray = req.files.map(file => `/uploads/items/${file.filename}`);
         }
-        if (imageArray.length === 0) errors.push('Agrega al menos una imagen (URL)');
+        
+        // Add URLs if provided (for backwards compatibility)
+        if (images) {
+            let urlImages = [];
+            if (Array.isArray(images)) {
+                urlImages = images.map(s => String(s).trim()).filter(Boolean);
+            } else {
+                urlImages = [String(images).trim()].filter(Boolean);
+            }
+            imageArray = [...imageArray, ...urlImages];
+        }
+        
+        if (imageArray.length === 0) errors.push('Agrega al menos una imagen (archivo o URL)');
 
         if (errors.length > 0) {
             console.log('Validation errors:', errors);
@@ -161,10 +172,45 @@ const itemsList = async (req, res) => {
 const itemsReadOne = async (req, res) => {
     try {
         const itemId = req.params.itemId;
-        const item = await items.findById(itemId);
+        const item = await items.findById(itemId).lean();
         if (!item) {
             return res.status(404).json({ status: 'error', message: 'Item no encontrado.' });
         }
+
+        // Populate seller info (name and rating) from users collection
+        const users = mongoose.model('user');
+        const seller = await users.findOne({ userid: item.sellerId }, {
+            name: 1,
+            userid: 1,
+            email: 1,
+            'rating.average': 1,
+            'rating.totalReviews': 1
+        }).lean();
+
+        // Attach seller data to item response
+        if (seller) {
+            item.seller = {
+                id: seller._id,
+                userid: seller.userid,
+                name: seller.name,
+                firstName: seller.name ? seller.name.split(' ')[0] : 'Usuario',
+                email: seller.email,
+                whatsapp: item.whatsapp || '',
+                rating: {
+                    average: seller.rating?.average || 0,
+                    totalReviews: seller.rating?.totalReviews || 0
+                }
+            };
+        } else {
+            // Fallback if seller not found
+            item.seller = {
+                name: item.sellerName || 'Usuario desconocido',
+                firstName: item.sellerName ? item.sellerName.split(' ')[0] : 'Usuario',
+                whatsapp: item.whatsapp || '',
+                rating: { average: 0, totalReviews: 0 }
+            };
+        }
+
         return res.status(200).json({ status: 'success', item });
     } catch (err) {
         if (err.name === 'CastError') {
@@ -212,14 +258,26 @@ const itemsUpdateOne = async (req, res) => {
         }
 
         // Handle images
-        if (images !== undefined) {
+        if (images !== undefined || (req.files && req.files.length > 0)) {
             let imageArray = [];
-            if (Array.isArray(images)) {
-                imageArray = images.map(s => String(s).trim()).filter(Boolean);
-            } else {
-                imageArray = [String(images).trim()].filter(Boolean);
+            
+            // Add uploaded files
+            if (req.files && req.files.length > 0) {
+                imageArray = req.files.map(file => `/uploads/items/${file.filename}`);
             }
-            if (imageArray.length === 0) errors.push('Debe haber al menos una imagen (URL)');
+            
+            // Add URLs if provided
+            if (images !== undefined) {
+                let urlImages = [];
+                if (Array.isArray(images)) {
+                    urlImages = images.map(s => String(s).trim()).filter(Boolean);
+                } else {
+                    urlImages = [String(images).trim()].filter(Boolean);
+                }
+                imageArray = [...imageArray, ...urlImages];
+            }
+            
+            if (imageArray.length === 0) errors.push('Debe haber al menos una imagen (archivo o URL)');
             else updateFields.images = imageArray;
         }
 
@@ -276,10 +334,38 @@ const itemsDeleteOne = async (req, res) => {
     }
 }
 
+// Increment contact clicks counter
+const itemsIncrementContact = async (req, res) => {
+    try {
+        const itemId = req.params.itemId;
+        const updatedItem = await items.findByIdAndUpdate(
+            itemId,
+            { $inc: { contactClicks: 1 } },
+            { new: true }
+        );
+        
+        if (!updatedItem) {
+            return res.status(404).json({ status: 'error', message: 'Item no encontrado.' });
+        }
+        
+        return res.status(200).json({ 
+            status: 'success', 
+            contactClicks: updatedItem.contactClicks 
+        });
+    } catch (err) {
+        return res.status(500).json({ 
+            status: 'error', 
+            message: 'Error al registrar contacto.', 
+            error: err.message 
+        });
+    }
+};
+
 module.exports = {
     itemsCreate,
     itemsList,
     itemsReadOne,
     itemsUpdateOne,
     itemsDeleteOne,
+    itemsIncrementContact,
 }

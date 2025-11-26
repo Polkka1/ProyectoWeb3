@@ -18,6 +18,7 @@ const authRouter = require('./app_server/routes/auth');
 const dashboardRouter = require('./app_server/routes/dashboard');
 const adminRouter = require('./app_server/routes/admin');
 const debugRouter = require('./app_server/routes/debug');
+const messagesRouter = require('./app_server/routes/messages');
 const apiRouter = require('./app_api/routes/index'); //REST API
 
 const app = express();
@@ -80,6 +81,7 @@ app.use('/items', itemsRouter);
 app.use('/auth', authRouter);
 app.use('/me', dashboardRouter);
 app.use('/admin', adminRouter);
+app.use('/messages', messagesRouter);
 app.use('/debug', debugRouter);
 app.use('/api', apiRouter); // REST API
 

@@ -36,6 +36,37 @@ block content
               |  #{item.condition}
           h3.text-primary.fw-bold.mb-3 $#{item.price}
           
+          // Seller Information
+          .card.mb-3.border-0.bg-light
+            .card-body
+              h6.card-subtitle.mb-2.text-muted Vendedor
+              .d-flex.align-items-center
+                .bg-primary.rounded-circle.d-flex.align-items-center.justify-content-center.me-3(style="width: 45px; height: 45px;")
+                  i.bi.bi-person.text-white.fs-5
+                div
+                  .fw-bold= item.seller ? (item.seller.firstName || item.seller.name) : (item.sellerName || 'Usuario')
+                  // 5-star rating display
+                  if item.seller && item.seller.rating
+                    .mb-1
+                      - const rating = item.seller.rating.average || 0
+                      - const fullStars = Math.floor(rating)
+                      - const hasHalfStar = rating % 1 >= 0.5
+                      - const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
+                      span.text-warning
+                        each star in Array(fullStars)
+                          i.bi.bi-star-fill
+                        if hasHalfStar
+                          i.bi.bi-star-half
+                        each star in Array(emptyStars)
+                          i.bi.bi-star
+                      span.text-muted.ms-2.small
+                        if item.seller.rating.totalReviews > 0
+                          | (#{item.seller.rating.totalReviews} #{item.seller.rating.totalReviews === 1 ? 'reseña' : 'reseñas'})
+                        else
+                          | (Sin reseñas)
+                  else
+                    small.text-muted Sin calificaciones aún
+          
           // Favorite button
           .mb-3
             button.btn.btn-outline-danger(onclick=`addToFavorites(${item.itemId}, '${item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${item.price}, ${item.sellerId}, '${item.sellerName ? item.sellerName.replace(/'/g, "\\'").replace(/"/g, '&quot;') : 'Vendedor'}')`)
@@ -44,14 +75,23 @@ block content
           
           if item.description
             p.mb-4= item.description
-          .d-flex.flex-wrap.gap-2
-            if item.whatsapp
-              a.btn.btn-success(href=`https://wa.me/${item.whatsapp}?text=Hola!%20Estoy%20interesado%20en%20tu%20${encodeURIComponent(item.title)}`, target="_blank")
+          
+          // Contact Actions
+          h6.mb-2 Contactar al vendedor
+          .d-grid.gap-2.mb-3
+            // In-app messaging button
+            a.btn.btn-primary(href=`/messages/new?sellerId=${item.sellerId}&itemId=${item._id}`, onclick=`trackContact('${item._id}')`)
+              i.bi.bi-chat-dots.me-2
+              | Enviar Mensaje
+            
+            if item.whatsapp || (item.seller && item.seller.whatsapp)
+              a.btn.btn-success(href=`https://wa.me/${item.whatsapp || item.seller.whatsapp}?text=Hola!%20Estoy%20interesado%20en%20tu%20${encodeURIComponent(item.title)}`, target="_blank", onclick=`trackContact('${item._id}')`)
                 i.bi.bi-whatsapp.me-2
                 | Contactar por WhatsApp
-            a.btn.btn-outline-primary(href='/items')
-              i.bi.bi-arrow-left.me-2
-              | Volver a la lista
+          
+          a.btn.btn-outline-secondary(href='/items')
+            i.bi.bi-arrow-left.me-2
+            | Volver a la lista
           if item.isAvailable === false
             .mt-3.alert.alert-secondary(role='alert')
               i.bi.bi-info-circle.me-2
@@ -108,4 +148,14 @@ block content
         console.error('Error adding to favorites:', err);
         alert('Error de red. Intenta de nuevo.');
       }
+    }
+    
+    // Track contact clicks
+    function trackContact(itemId) {
+      fetch(`/api/items/${itemId}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(err => {
+        console.error('Error tracking contact:', err);
+      });
     }

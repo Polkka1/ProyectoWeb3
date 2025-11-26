@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../config/upload'); //import the upload middleware
 
 const ctrlUsers = require('../controllers/users'); //import the users controller
 const ctrlAuth = require('../controllers/auth'); //import the auth controller
@@ -39,14 +40,17 @@ router
 
 router
     .route('/items')
-    .post(ctrlItems.itemsCreate) //create item
+    .post(upload.array('images', 5), ctrlItems.itemsCreate) //create item with file upload (max 5 images)
     .get(ctrlItems.itemsList); //list items
 
 router
     .route('/items/:itemId')
     .get(ctrlItems.itemsReadOne) //read one item
-    .put(ctrlItems.itemsUpdateOne) //update item
+    .put(upload.array('images', 5), ctrlItems.itemsUpdateOne) //update item with file upload
     .delete(ctrlItems.itemsDeleteOne); //delete item
+
+// Increment contact clicks
+router.post('/items/:itemId/contact', ctrlItems.itemsIncrementContact);
 
 // categories collection routes
 
@@ -93,6 +97,9 @@ router
     .route('/messages')
     .post(ctrlMessages.messagesCreate) //create message
     .get(ctrlMessages.messagesList); //list messages
+
+// Get unread message count
+router.get('/messages/unread/count', ctrlMessages.messagesUnreadCount);
 
 router
     .route('/messages/:messageId')

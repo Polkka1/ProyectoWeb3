@@ -1,0 +1,77 @@
+extends ../layout
+
+block content
+  .container.my-5
+    .row.justify-content-center
+      .col-md-8.col-lg-6
+        .card.shadow
+          .card-body.p-4
+            h2.card-title.mb-4
+              i.bi.bi-chat-dots.me-2
+              | Enviar Mensaje
+
+            if error
+              .alert.alert-danger.alert-dismissible.fade.show(role="alert")
+                i.bi.bi-exclamation-triangle-fill.me-2
+                = error
+                button.btn-close(type="button", data-bs-dismiss="alert", aria-label="Close")
+
+            if success
+              .alert.alert-success.alert-dismissible.fade.show(role="alert")
+                i.bi.bi-check-circle-fill.me-2
+                = success
+                button.btn-close(type="button", data-bs-dismiss="alert", aria-label="Close")
+
+            if item
+              .alert.alert-info.mb-4
+                strong Consulta sobre: 
+                = item.title
+                br
+                small.text-muted Precio: $#{item.price} | Categoría: #{item.category}
+
+            form(method="POST", action="/messages/new")
+              input(type="hidden", name="receiverId", value=sellerId)
+              if item
+                input(type="hidden", name="itemId", value=item._id)
+
+              .mb-3
+                label.form-label(for="subject") Asunto
+                input.form-control(
+                  type="text",
+                  id="subject",
+                  name="subject",
+                  value=item ? `Consulta sobre: ${item.title}` : (formData.subject || ''),
+                  required,
+                  minlength="5",
+                  maxlength="100"
+                )
+                .form-text Describe brevemente tu consulta (5-100 caracteres)
+
+              .mb-4
+                label.form-label(for="body") Mensaje
+                textarea.form-control(
+                  id="body",
+                  name="body",
+                  rows="6",
+                  required,
+                  minlength="10",
+                  maxlength="1000"
+                )= formData.body || ''
+                .form-text Escribe tu mensaje al vendedor (10-1000 caracteres)
+
+              .d-grid.gap-2
+                button.btn.btn-primary.btn-lg(type="submit")
+                  i.bi.bi-send.me-2
+                  | Enviar Mensaje
+                
+                a.btn.btn-outline-secondary(href="javascript:history.back()")
+                  i.bi.bi-arrow-left.me-2
+                  | Cancelar
+
+            .mt-4.p-3.bg-light.rounded
+              h6.mb-2
+                i.bi.bi-info-circle.me-2
+                | Información
+              small.text-muted
+                | El vendedor recibirá tu mensaje y podrá responderte directamente.
+                | Mantén una comunicación respetuosa y profesional.

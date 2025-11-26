@@ -33,7 +33,7 @@ block content
                 div= error
 
             // Publish Form
-            form#itemForm(method="POST", action="/api/items", novalidate)
+            form#itemForm(method="POST", action="/api/items", enctype="multipart/form-data", novalidate)
               .row
                 // Title
                 .col-12.mb-3
@@ -151,22 +151,44 @@ block content
                     | Imágenes *
                   .card.bg-light
                     .card-body
-                      p.mb-3.text-muted Por ahora ingresa URLs de imágenes (puedes usar servicios como Imgur, Google Drive, etc.)
+                      // File Upload Section
+                      .mb-3
+                        label.form-label.fw-bold
+                          i.bi.bi-cloud-upload.me-1
+                          | Subir Imágenes
+                        input.form-control(
+                          type="file", 
+                          name="images",
+                          id="imageFiles",
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp",
+                          multiple
+                        )
+                        .form-text Selecciona hasta 5 imágenes (JPG, PNG, GIF, WEBP). Máximo 5MB por imagen.
+                        
+                        // Image Preview Container
+                        #imagePreview.mt-3.row.g-2
 
-                      #imageInputs
-                        .input-group.mb-2
-                          span.input-group-text
-                            i.bi.bi-image
-                          input.form-control(
-                            type="url", 
-                            name="images", 
-                            placeholder="https://ejemplo.com/imagen1.jpg",
-                            value=Array.isArray(formData.images) ? formData.images[0] : formData.images || ''
-                          )
-                          button.btn.btn-outline-success(type="button", onclick="addImageInput()")
-                            i.bi.bi-plus
+                      hr
 
-                      .form-text Agrega al menos una imagen. Máximo 4 imágenes.
+                      // Optional URL Section
+                      .mb-0
+                        label.form-label.fw-bold
+                          i.bi.bi-link-45deg.me-1
+                          | O ingresa URLs (opcional)
+                        #imageInputs
+                          .input-group.mb-2
+                            span.input-group-text
+                              i.bi.bi-image
+                            input.form-control(
+                              type="url", 
+                              name="imageUrls", 
+                              placeholder="https://ejemplo.com/imagen1.jpg",
+                              value=Array.isArray(formData.images) ? formData.images[0] : formData.images || ''
+                            )
+                            button.btn.btn-outline-success(type="button", onclick="addImageInput()")
+                              i.bi.bi-plus
+
+                        .form-text Puedes combinar imágenes subidas con URLs.
 
               // Submit Button
               .d-grid.gap-2.mt-4
@@ -182,10 +204,47 @@ block content
                   i.bi.bi-arrow-left.me-2
                   | Volver al Inicio
 
-  // JavaScript for dynamic image inputs
+  // JavaScript for dynamic image inputs and preview
   script.
     let imageInputCount = 1;
     const maxImages = 4;
+
+    // Image preview
+    document.addEventListener('DOMContentLoaded', function() {
+      const imageFiles = document.getElementById('imageFiles');
+      const imagePreview = document.getElementById('imagePreview');
+
+      if (imageFiles) {
+        imageFiles.addEventListener('change', function(e) {
+          imagePreview.innerHTML = '';
+          const files = Array.from(e.target.files).slice(0, 5);
+          
+          files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const col = document.createElement('div');
+              col.className = 'col-4';
+              col.innerHTML = `
+                <div class="position-relative">
+                  <img src="${e.target.result}" class="img-fluid rounded" style="height: 100px; object-fit: cover; width: 100%;">
+                  <span class="position-absolute top-0 end-0 badge bg-primary m-1">${index + 1}</span>
+                </div>
+              `;
+              imagePreview.appendChild(col);
+            };
+            reader.readAsDataURL(file);
+          });
+
+          if (files.length >= 5) {
+            imageFiles.disabled = true;
+            const warning = document.createElement('div');
+            warning.className = 'alert alert-warning mt-2';
+            warning.textContent = 'Máximo 5 imágenes alcanzado';
+            imagePreview.appendChild(warning);
+          }
+        });
+      }
+    });
 
     function addImageInput() {
       if (imageInputCount < maxImages) {
@@ -197,7 +256,7 @@ block content
           <span class="input-group-text">
             <i class="bi bi-image"></i>
           </span>
-          <input type="url" class="form-control" name="images" placeholder="https://ejemplo.com/imagen${imageInputCount}.jpg">
+          <input type="url" class="form-control" name="imageUrls" placeholder="https://ejemplo.com/imagen${imageInputCount}.jpg">
           <button type="button" class="btn btn-outline-danger" onclick="removeImageInput(this)">
             <i class="bi bi-dash"></i>
           </button>
@@ -260,6 +319,8 @@ block content
 
           // Collect form data
           const form = e.target;
+          const formData = new FormData(form);
+          
           const title = form.querySelector('#title')?.value?.trim();
           const description = form.querySelector('#description')?.value?.trim();
           const price = parseFloat(form.querySelector('#price')?.value || '0');
@@ -267,8 +328,11 @@ block content
           const condition = form.querySelector('#condition')?.value;
           const whatsapp = form.querySelector('#whatsapp')?.value;
           const quantity = parseInt(form.querySelector('#quantity')?.value || '1', 10);
-          const imageInputs = form.querySelectorAll('input[name="images"]');
-          const images = Array.from(imageInputs)
+          
+          // Check if we have files or URLs
+          const imageFiles = form.querySelector('#imageFiles')?.files || [];
+          const urlInputs = form.querySelectorAll('input[name="imageUrls"]');
+          const imageUrls = Array.from(urlInputs)
             .map(i => i.value.trim())
             .filter(Boolean);
 
@@ -279,7 +343,7 @@ block content
           if (!price || isNaN(price) || price <= 0) errs.push('El precio debe ser un número mayor a 0');
           if (!category) errs.push('Selecciona una categoría');
           if (!condition) errs.push('Selecciona la condición del producto');
-          if (images.length === 0) errs.push('Agrega al menos una imagen (URL)');
+          if (imageFiles.length === 0 && imageUrls.length === 0) errs.push('Agrega al menos una imagen (archivo o URL)');
           if (!Number.isInteger(quantity) || quantity < 1) errs.push('La cantidad debe ser un entero mayor o igual a 1');
           if (!whatsapp || !/^\d{9}$/.test(whatsapp)) errs.push('Ingresa un WhatsApp válido (9 dígitos)');
 
@@ -292,10 +356,29 @@ block content
           }
 
           try {
+            // Build FormData with files and other fields
+            const submitData = new FormData();
+            submitData.append('title', title);
+            submitData.append('description', description);
+            submitData.append('price', price);
+            submitData.append('category', category);
+            submitData.append('condition', condition);
+            submitData.append('whatsapp', whatsapp);
+            submitData.append('quantity', quantity);
+            
+            // Add image files
+            Array.from(imageFiles).forEach(file => {
+              submitData.append('images', file);
+            });
+            
+            // Add image URLs
+            imageUrls.forEach(url => {
+              submitData.append('images', url);
+            });
+
             const res = await fetch('/api/items', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title, description, price, category, condition, images, whatsapp, quantity })
+              body: submitData
             });
 
             if (res.ok) {

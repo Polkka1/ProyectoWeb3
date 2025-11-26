@@ -23,6 +23,7 @@ const itemsSchema = new mongoose.Schema({
     images: [String], // Array de URLs de imágenes
     isAvailable: { type: Boolean, default: true },
     views: { type: Number, default: 0 },
+    contactClicks: { type: Number, default: 0 },
     created: { type: Date, default: Date.now },
     lastModified: { type: Date, default: Date.now }
 });

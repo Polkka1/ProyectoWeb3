@@ -73,29 +73,54 @@ block content
                 .bg-primary.rounded-circle.d-flex.align-items-center.justify-content-center.me-3(style="width: 50px; height: 50px;")
                   i.bi.bi-person.text-white.fs-4
                 div
-                  .fw-bold= item.seller.name
+                  .fw-bold= item.seller.firstName || item.seller.name
+                  // 5-star rating display
+                  .mb-1
+                    - const rating = item.seller.rating?.average || 0
+                    - const fullStars = Math.floor(rating)
+                    - const hasHalfStar = rating % 1 >= 0.5
+                    - const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
+                    span.text-warning
+                      each star in Array(fullStars)
+                        i.bi.bi-star-fill
+                      if hasHalfStar
+                        i.bi.bi-star-half
+                      each star in Array(emptyStars)
+                        i.bi.bi-star
+                    span.text-muted.ms-2.small
+                      if item.seller.rating?.totalReviews > 0
+                        | (#{item.seller.rating.totalReviews} #{item.seller.rating.totalReviews === 1 ? 'reseña' : 'reseñas'})
+                      else
+                        | (Sin reseñas)
                   small.text-muted Estudiante USFQ
                   br
-                  small.text-muted Publicado el #{new Date(item.createdAt).toLocaleDateString('es-EC')}
+                  small.text-muted Publicado el #{new Date(item.created || item.createdAt).toLocaleDateString('es-EC')}
 
             // Contact Actions
             .mb-4
               h5.mb-3 Contactar al vendedor
               .d-grid.gap-2
-                a.btn.btn-success.btn-lg(
-                  href=`https://wa.me/${item.seller.whatsapp}?text=Hola! Vi tu publicación en CampusSwap: ${item.title}. ¿Está disponible?`,
-                  target="_blank",
-                  onclick="trackContact('whatsapp')"
-                )
-                  i.bi.bi-whatsapp.me-2
-                  | Contactar por WhatsApp
+                // In-app messaging button
+                a.btn.btn-primary.btn-lg(href=`/messages/new?sellerId=${item.sellerId}&itemId=${item._id}`)
+                  i.bi.bi-chat-dots.me-2
+                  | Enviar Mensaje
                 
-                a.btn.btn-outline-primary.btn-lg(
-                  href=`mailto:${item.seller.email}?subject=Consulta sobre: ${item.title}&body=Hola ${item.seller.name},%0A%0AVi tu publicación en CampusSwap sobre "${item.title}" y me interesa conocer más detalles.%0A%0AGracias!`,
-                  onclick="trackContact('email')"
-                )
-                  i.bi.bi-envelope.me-2
-                  | Enviar Email
+                if item.seller.whatsapp
+                  a.btn.btn-success.btn-lg(
+                    href=`https://wa.me/${item.seller.whatsapp}?text=Hola! Vi tu publicación en CampusSwap: ${item.title}. ¿Está disponible?`,
+                    target="_blank",
+                    onclick="trackContact('whatsapp')"
+                  )
+                    i.bi.bi-whatsapp.me-2
+                    | Contactar por WhatsApp
+                
+                if item.seller.email
+                  a.btn.btn-outline-secondary.btn-lg(
+                    href=`mailto:${item.seller.email}?subject=Consulta sobre: ${item.title}&body=Hola ${item.seller.name},%0A%0AVi tu publicación en CampusSwap sobre "${item.title}" y me interesa conocer más detalles.%0A%0AGracias!`,
+                    onclick="trackContact('email')"
+                  )
+                    i.bi.bi-envelope.me-2
+                    | Enviar Email
 
             // Stats
             .border-top.pt-3

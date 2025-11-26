@@ -1,0 +1,40 @@
+extends ../layout
+
+block content
+  .container.my-5
+    h2.mb-4
+      i.bi.bi-envelope.me-2
+      | Mis Mensajes
+
+    if error
+      .alert.alert-warning
+        i.bi.bi-exclamation-triangle.me-2
+        = error
+
+    if conversations && conversations.length > 0
+      .list-group
+        each msg in conversations
+          - const isReceived = msg.receiverId === userId
+          - const otherParty = isReceived ? msg.senderName : msg.receiverName
+          - const otherPartyId = isReceived ? msg.senderId : msg.receiverId
+          
+          a.list-group-item.list-group-item-action(href=`/messages/conversation/${msg.conversationId}`, class=(!msg.isRead && isReceived) ? 'list-group-item-primary' : '')
+            .d-flex.w-100.justify-content-between.align-items-start
+              div.flex-grow-1
+                .d-flex.align-items-center.mb-1
+                  h6.mb-0.me-2= otherParty
+                  if !msg.isRead && isReceived
+                    span.badge.bg-danger.badge-sm Nuevo
+                p.mb-1.text-muted.small
+                  strong= msg.subject
+                p.mb-0.text-truncate(style="max-width: 600px;")= msg.messageText
+                if msg.itemTitle
+                  small.text-muted
+                    i.bi.bi-box.me-1
+                    = msg.itemTitle
+              small.text-muted.text-nowrap= new Date(msg.created).toLocaleDateString('es-EC')
+    else
+      .text-center.py-5
+        i.bi.bi-inbox.text-muted(style="font-size: 4rem;")
+        p.text-muted.mt-3 No tienes mensajes aún
+        a.btn.btn-primary(href="/items") Explorar Productos
